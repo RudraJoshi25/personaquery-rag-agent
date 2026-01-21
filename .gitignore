@@ -205,3 +205,17 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+# Private data (DO NOT COMMIT)
+data/private/
+.env
+
+# LlamaIndex / local storage
+storage/
+*.sqlite
+*.db
+
+# OS / IDE
+.DS_Store
+.vscode/
