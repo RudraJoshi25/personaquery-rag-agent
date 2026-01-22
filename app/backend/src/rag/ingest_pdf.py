@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List
 from pypdf import PdfReader
 
-from src.rag.chunking import Chunk, chunk_text
+from src.rag.chunking import Chunk, chunk_text_for_file
 
 
 def load_pdf_chunks(private_data_dir: str) -> List[Chunk]:
@@ -18,11 +18,13 @@ def load_pdf_chunks(private_data_dir: str) -> List[Chunk]:
     all_chunks: List[Chunk] = []
 
     for pdf_path in pdfs:
+        print(f"Reading PDF: {pdf_path.name}", flush=True)
         reader = PdfReader(str(pdf_path))
-        file_name = pdf_path.name
+        total_pages = len(reader.pages)
 
         for i, page in enumerate(reader.pages, start=1):
+            print(f"  page {i}/{total_pages}", flush=True)
             text = page.extract_text() or ""
-            all_chunks.extend(chunk_text(text, file_name=file_name, page_num=i))
+            all_chunks.extend(chunk_text_for_file(text, file_name=pdf_path.name, page_num=i))
 
     return all_chunks

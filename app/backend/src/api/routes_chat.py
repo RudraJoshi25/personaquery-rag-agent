@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from src.rag.retrieve import get_query_engine
 
+from src.rag.retrieve_custom import retrieve, make_context_pack
+from src.rag.llm_groq import answer_with_groq
 
 router = APIRouter()
 
@@ -10,20 +11,18 @@ class ChatRequest(BaseModel):
 
 @router.post("/chat")
 def chat(req: ChatRequest):
-    qe = get_query_engine()
-    result = qe.query(req.question)
+    hits = retrieve(req.question, top_k=5)
+    context = make_context_pack(hits)
+    answer = answer_with_groq(req.question, context)
 
     sources = []
-    for node in getattr(result, "source_nodes", []) or []:
-        meta = node.node.metadata or {}
+    for h in hits:
+        m = h["metadata"]
         sources.append({
-            "file_name": meta.get("file_name") or meta.get("filename") or "unknown",
-            "page_label": meta.get("page_label"),
-            "score": node.score,
-            "snippet": node.node.get_text()[:280],
+            "file_name": m.get("file_name", "unknown"),
+            "page_label": m.get("page_label"),
+            "score": h["score"],
+            "snippet": h["text"][:280],
         })
 
-    return {
-        "answer": str(result),
-        "sources": sources,
-    }
+    return {"answer": answer, "sources": sources}
