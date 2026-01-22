@@ -2,8 +2,8 @@ from llama_index.core import Settings
 from llama_index.llms.openai import OpenAI
 from llama_index.embeddings.openai import OpenAIEmbedding
 
-from app.backend.src.core.config import OPENAI_API_KEY, OPENAI_MODEL, EMBED_MODEL
-from app.backend.src.rag.index import load_index
+from src.core.config import OPENAI_API_KEY, OPENAI_MODEL, EMBED_MODEL
+from src.rag.index import load_index
 
 
 def get_query_engine():
