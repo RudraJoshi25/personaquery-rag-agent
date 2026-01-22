@@ -30,23 +30,22 @@ def retrieve(question: str, top_k: int = TOP_K) -> List[Dict[str, Any]]:
     idx = _get_index()
 
     q = model.encode([question], normalize_embeddings=True).astype(np.float32)[0]
-    emb = idx["embeddings"]  # shape: (N, D)
+    emb = idx["embeddings"]  # (N, D)
 
-    # cosine similarity (since normalized embeddings)
-    scores = emb @ q
+    scores = emb @ q  # cosine similarity (normalized)
     top_idx = np.argsort(-scores)[:top_k]
 
-    results = []
+    hits = []
     for i in top_idx:
         item = idx["meta"][int(i)]
-        results.append(
+        hits.append(
             {
                 "score": float(scores[int(i)]),
                 "text": item["text"],
                 "metadata": item["metadata"],
             }
         )
-    return results
+    return hits
 
 
 def make_context_pack(hits: List[Dict[str, Any]]) -> str:

@@ -17,7 +17,7 @@ def answer_with_groq(question: str, context: str) -> str:
         "Keep the answer concise and interview-ready.\n"
     )
 
-    user = f"QUESTION:\n{question}\n\nCONTEXT:\n{context}\n\nReturn the best possible answer using only context."
+    user = f"QUESTION:\n{question}\n\nCONTEXT:\n{context}\n\nAnswer using only the context."
 
     resp = client.chat.completions.create(
         model=GROQ_MODEL,
