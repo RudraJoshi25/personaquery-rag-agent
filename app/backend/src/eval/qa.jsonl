@@ -1,0 +1,3 @@
+{"id":"q1","question":"Who is Rudra?","must_include":["Rudra Joshi","AI/ML"],"must_cite":true}
+{"id":"q2","question":"List projects mentioned in the documents.","must_include":["project"],"must_cite":true}
+...
