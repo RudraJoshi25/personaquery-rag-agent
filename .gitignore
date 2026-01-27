@@ -213,6 +213,9 @@ data/private/
 
 # LlamaIndex / local storage
 storage/
+# allow backend prebuilt RAG index
+!app/backend/storage/
+!app/backend/storage/**
 *.sqlite
 *.db
 
