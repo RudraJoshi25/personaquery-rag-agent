@@ -4,9 +4,11 @@ import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Source = {
+  id?: number;
   file_name?: string;
   page_label?: string;
-  score?: number;
+  section?: string;
+  relevance?: number;
   snippet?: string;
 };
 
@@ -17,9 +19,10 @@ type ChatMessage = {
 };
 
 const DEFAULT_PROMPTS = [
-  "Top 3 GenAI projects",
+  "Top Projects",
   "Best-fit roles",
-  "Key strengths (ATS)",
+  
+  "Key strengths of Rudra",
   "Publications & patent",
 ];
 
@@ -46,6 +49,72 @@ export default function ChatUI() {
   }, [messages, loading]);
 
   const canSend = useMemo(() => input.trim().length > 0 && !loading, [input, loading]);
+  const citeRegex = /\[\[cite:([0-9,\s]+)\]\]/g;
+
+  function renderContentWithCitations(content: string, sources?: Source[]) {
+    if (!content) return null;
+    const sourceById = new Map<number, Source>();
+    (sources || []).forEach((s) => {
+      if (typeof s.id === "number") sourceById.set(s.id, s);
+    });
+
+    const parts: Array<string | { ids: number[]; key: string }> = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = citeRegex.exec(content))) {
+      if (match.index > lastIndex) {
+        parts.push(content.slice(lastIndex, match.index));
+      }
+      const rawIds = match[1]
+        .split(",")
+        .map((p) => p.trim())
+        .filter((p) => p.length > 0);
+      const ids = rawIds.map((p) => Number(p)).filter((n) => Number.isFinite(n));
+      parts.push({ ids, key: `${match.index}-${match[0]}` });
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < content.length) {
+      parts.push(content.slice(lastIndex));
+    }
+
+    return (
+      <span className="whitespace-pre-wrap">
+        {parts.map((p, i) => {
+          if (typeof p === "string") {
+            return <span key={`t-${i}`}>{p}</span>;
+          }
+
+          const tooltipSources = p.ids
+            .map((id) => sourceById.get(id))
+            .filter(Boolean) as Source[];
+
+          return (
+            <span key={`c-${p.key}-${i}`} className="relative inline-block align-baseline">
+              <span className="group inline-flex items-center rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[10px] text-white/80">
+                sources
+                <span className="ml-1 text-white/50">
+                  [{p.ids.join(",")}]
+                </span>
+                <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-80 -translate-x-1/2 rounded-xl border border-white/15 bg-black/80 p-3 text-[11px] text-white/85 opacity-0 shadow-[0_10px_30px_rgba(0,0,0,0.35)] transition group-hover:opacity-100">
+                  {tooltipSources.length === 0 && <div>No sources available.</div>}
+                  {tooltipSources.map((s, idx) => (
+                    <div key={`${s.id ?? idx}`} className="mb-2 last:mb-0">
+                      <div className="font-medium text-white/90">
+                        [{s.id ?? idx + 1}] {s.file_name || "Document"}{" "}
+                        {s.page_label ? <span className="text-white/60">(p.{s.page_label})</span> : null}
+                        {s.section ? <span className="ml-2 text-white/50">{s.section}</span> : null}
+                      </div>
+                      {s.snippet ? <div className="mt-1 text-white/70">{s.snippet}</div> : null}
+                    </div>
+                  ))}
+                </span>
+              </span>
+            </span>
+          );
+        })}
+      </span>
+    );
+  }
 
   async function send(questionOverride?: string) {
     const q = (questionOverride ?? input).trim();
@@ -166,7 +235,7 @@ export default function ChatUI() {
                 Quick prompts (click one)
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-3">
+              <div className="mx-auto flex w-full max-w-[520px] flex-wrap items-center justify-center gap-3">
                 {DEFAULT_PROMPTS.map((p) => (
                   <button
                     key={p}
@@ -202,7 +271,9 @@ export default function ChatUI() {
                         : "bg-white/7",
                     ].join(" ")}
                   >
-                    <div className="whitespace-pre-wrap text-sm leading-relaxed text-white/90">{m.content}</div>
+                    <div className="text-sm leading-relaxed text-white/90">
+                      {renderContentWithCitations(m.content, m.sources)}
+                    </div>
 
                     {/* Sources (render properly; no object-as-child crash) */}
                     {m.role === "assistant" && Array.isArray(m.sources) && m.sources.length > 0 && (
@@ -210,12 +281,14 @@ export default function ChatUI() {
                         <summary className="cursor-pointer text-xs text-white/70">Sources</summary>
                         <ul className="mt-2 space-y-2 text-xs text-white/70">
                           {m.sources.slice(0, 6).map((s, i) => (
-                            <li key={i} className="rounded-lg border border-white/10 bg-white/5 p-2">
+                            <li key={s.id ?? i} className="rounded-lg border border-white/10 bg-white/5 p-2">
                               <div className="font-medium text-white/80">
+                                <span className="text-white/60">[{s.id ?? i + 1}]</span>{" "}
                                 {s.file_name || "Document"}{" "}
-                                {s.page_label ? <span className="text-white/60">({s.page_label})</span> : null}
-                                {typeof s.score === "number" ? (
-                                  <span className="ml-2 text-white/50">score {s.score.toFixed(3)}</span>
+                                {s.page_label ? <span className="text-white/60">(p.{s.page_label})</span> : null}
+                                {s.section ? <span className="ml-2 text-white/50">{s.section}</span> : null}
+                                {typeof s.relevance === "number" ? (
+                                  <span className="ml-2 text-white/50">rel {s.relevance.toFixed(3)}</span>
                                 ) : null}
                               </div>
                               {s.snippet ? (

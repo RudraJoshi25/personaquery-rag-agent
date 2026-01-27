@@ -135,23 +135,46 @@ def retrieve(question: str, top_k: int = TOP_K) -> List[Dict[str, Any]]:
             }
         )
 
+    # Optional score thresholding
+    min_score = float(os.getenv("RAG_MIN_SCORE", "0") or "0")
+    if min_score > 0:
+        hits = [h for h in hits if h.get("score", 0.0) >= min_score]
+
+    # Dedupe by (file_name, page_label) keeping best score
+    deduped: Dict[tuple[str, str], Dict[str, Any]] = {}
+    for h in hits:
+        m = h.get("metadata", {}) or {}
+        key = (str(m.get("file_name", "unknown")), str(m.get("page_label", "n/a")))
+        if key not in deduped or h.get("score", 0.0) > deduped[key].get("score", 0.0):
+            deduped[key] = h
+    hits = list(deduped.values())
+
+    # Keep deterministic order by score desc
+    hits = sorted(hits, key=lambda x: x.get("score", 0.0), reverse=True)[:top_k]
     return hits
 
 
-def make_context_pack(hits: List[Dict[str, Any]], max_chars: int = 12000) -> str:
+def make_context_pack(
+    hits: List[Dict[str, Any]],
+    max_chars: int = 12000,
+    source_ids: Optional[List[int]] = None,
+) -> str:
     """
     Context pack given to the LLM. Includes file + page/section identifiers.
     """
     blocks = []
     total = 0
-    for h in hits:
+    for idx, h in enumerate(hits):
         m = h["metadata"]
         file_name = m.get("file_name", "unknown")
         page = m.get("page_label", "?")
         section = m.get("section", None)
 
         section_label = section or "Document"
-        header = f"[{file_name} | p.{page} | {section_label}]"
+        if source_ids and idx < len(source_ids):
+            header = f"[SOURCE {source_ids[idx]}] {file_name} | p.{page} | {section_label}"
+        else:
+            header = f"[{file_name} | p.{page} | {section_label}]"
 
         block = header + "\n" + h["text"]
         if total + len(block) > max_chars:
