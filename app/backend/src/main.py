@@ -1,7 +1,9 @@
 # src/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import os
+from pathlib import Path
 
 from src.api.routes_chat import router as chat_router
 from src.api.routes_interview import router as interview_router
@@ -27,6 +29,29 @@ app.add_middleware(
 
 app.include_router(chat_router)
 app.include_router(interview_router)
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    # Return JSON even on unhandled errors so frontend can read it (CORS headers added by middleware)
+    return JSONResponse(
+        status_code=500,
+        content={"error": "Internal server error", "detail": str(exc)},
+    )
+
+@app.on_event("startup")
+async def startup_log():
+    # Lightweight diagnostics for Render
+    try:
+        import psutil  # optional
+        mem_mb = psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024
+    except Exception:
+        mem_mb = None
+
+    storage_dir = Path(os.getenv("RAG_STORAGE_DIR", "storage"))
+    storage_ok = all((storage_dir / f).exists() for f in ["chunks.jsonl", "vectors.npy", "bm25.json"])
+    vector_enabled = os.getenv("RAG_VECTOR_ENABLED", "1").lower() in {"1", "true", "yes"}
+
+    print(f"[startup] vector_enabled={vector_enabled} storage_ok={storage_ok} mem_mb={mem_mb}", flush=True)
 
 @app.get("/health")
 def health():
