@@ -116,6 +116,30 @@ export default function ChatUI() {
     );
   }
 
+  async function fetchWithRetry(input: RequestInfo, init: RequestInit, retries = 2, backoffMs = 800) {
+    let lastErr: any = null;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const res = await fetch(input, init);
+        if (res.status === 502 || res.status === 503 || res.status === 504) {
+          lastErr = new Error(`Upstream error (${res.status})`);
+          if (attempt < retries) {
+            await new Promise((r) => setTimeout(r, backoffMs * (attempt + 1)));
+            continue;
+          }
+        }
+        return res;
+      } catch (e: any) {
+        lastErr = e;
+        if (attempt < retries) {
+          await new Promise((r) => setTimeout(r, backoffMs * (attempt + 1)));
+          continue;
+        }
+      }
+    }
+    throw lastErr ?? new Error("Request failed");
+  }
+
   async function send(questionOverride?: string) {
     const q = (questionOverride ?? input).trim();
     if (!q || loading) return;
@@ -127,7 +151,7 @@ export default function ChatUI() {
     setInput("");
 
     try {
-      const res = await fetch(buildApiUrl("/chat"), {
+      const res = await fetchWithRetry(buildApiUrl("/chat"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // CORS preflight is handled by FastAPI CORSMiddleware
