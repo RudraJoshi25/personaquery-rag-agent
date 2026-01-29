@@ -84,18 +84,20 @@ def retrieve(question: str, top_k: int = TOP_K) -> List[Dict[str, Any]]:
     bm25_hits = store.search_bm25(question, top_k=cand_k)
     bm25_ranked_ids = [doc_id for doc_id, _ in bm25_hits]
 
-    # Vector retrieval (may fail)
+    # Vector retrieval (may fail). Allow disabling for low-memory deployments.
     vec_ranked_ids: List[int] = []
     vec_scores_by_id: Dict[int, float] = {}
 
-    try:
-        q_vec = model.encode([question], normalize_embeddings=True)[0].tolist()
-        vec_hits = store.search_vector(q_vec, top_k=cand_k)
-        vec_ranked_ids = [doc_id for doc_id, _ in vec_hits]
-        vec_scores_by_id = {doc_id: float(score) for doc_id, score in vec_hits}
-    except Exception:
-        # fallback = BM25-only
-        vec_ranked_ids = []
+    vector_enabled = os.getenv("RAG_VECTOR_ENABLED", "1").lower() in {"1", "true", "yes"}
+    if vector_enabled:
+        try:
+            q_vec = model.encode([question], normalize_embeddings=True)[0].tolist()
+            vec_hits = store.search_vector(q_vec, top_k=cand_k)
+            vec_ranked_ids = [doc_id for doc_id, _ in vec_hits]
+            vec_scores_by_id = {doc_id: float(score) for doc_id, score in vec_hits}
+        except Exception:
+            # fallback = BM25-only
+            vec_ranked_ids = []
 
     # Fuse
     if vec_ranked_ids:
