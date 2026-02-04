@@ -2,20 +2,19 @@ from __future__ import annotations
 from typing import List, Dict, Any, Tuple, Optional
 import os
 
-from sentence_transformers import SentenceTransformer
-
 from src.core.config import EMBED_MODEL, TOP_K
 from src.rag.store import HybridStore
 
 
 # singletons
-_model: Optional[SentenceTransformer] = None
+_model = None
 _store: Optional[HybridStore] = None
 
 
-def _get_model() -> SentenceTransformer:
+def _get_model():
     global _model
     if _model is None:
+        from sentence_transformers import SentenceTransformer
         _model = SentenceTransformer(EMBED_MODEL)
     return _model
 
@@ -75,7 +74,6 @@ def retrieve(question: str, top_k: int = TOP_K) -> List[Dict[str, Any]]:
     Fallback:
       - If embedding fails, return BM25 only
     """
-    model = _get_model()
     store = _get_store()
 
     # Pull more candidates than final top_k for better fusion
@@ -91,6 +89,7 @@ def retrieve(question: str, top_k: int = TOP_K) -> List[Dict[str, Any]]:
 
     vector_enabled = os.getenv("RAG_VECTOR_ENABLED", "1").lower() in {"1", "true", "yes"}
     if vector_enabled:
+        model = _get_model()
         try:
             q_vec = model.encode([question], normalize_embeddings=True)[0].tolist()
             vec_hits = store.search_vector(q_vec, top_k=cand_k)
