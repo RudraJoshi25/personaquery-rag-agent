@@ -35,7 +35,8 @@ def _get_store() -> HybridStore:
     # If you switch embedding model later, update this or compute it dynamically.
     embed_dim = int(os.getenv("EMBED_DIM", "384"))
     st = HybridStore(embed_dim=embed_dim)
-    loaded = st.load()
+    vector_enabled = os.getenv("RAG_VECTOR_ENABLED", "1").lower() in {"1", "true", "yes"}
+    loaded = st.load(load_vectors=vector_enabled)
     if not loaded:
         raise RuntimeError(
             "RAG store not found. Run ingestion to create storage/chunks.jsonl, vectors.npy, bm25.json"

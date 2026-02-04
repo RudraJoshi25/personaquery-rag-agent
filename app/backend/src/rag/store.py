@@ -45,10 +45,12 @@ class HybridStore:
         self._bm25_tokens: List[List[str]] = []
 
     def is_built(self) -> bool:
-        return (len(self.chunks) > 0) and (self.vectors is not None) and (self.bm25 is not None)
+        return (len(self.chunks) > 0) and (self.bm25 is not None)
 
-    def load(self) -> bool:
-        if not (os.path.exists(CHUNKS_PATH) and os.path.exists(VECTORS_PATH) and os.path.exists(BM25_PATH)):
+    def load(self, load_vectors: bool = True) -> bool:
+        if not (os.path.exists(CHUNKS_PATH) and os.path.exists(BM25_PATH)):
+            return False
+        if load_vectors and not os.path.exists(VECTORS_PATH):
             return False
 
         # chunks
@@ -58,10 +60,13 @@ class HybridStore:
                 obj = json.loads(line)
                 self.chunks.append(StoredChunk(text=obj["text"], metadata=obj["metadata"]))
 
-        # vectors
-        self.vectors = np.load(VECTORS_PATH).astype("float32")
-        if self.vectors.ndim != 2 or self.vectors.shape[1] != self.embed_dim:
-            raise RuntimeError(f"vectors.npy shape mismatch. got {self.vectors.shape}, expected (*, {self.embed_dim})")
+        # vectors (optional)
+        if load_vectors:
+            self.vectors = np.load(VECTORS_PATH).astype("float32")
+            if self.vectors.ndim != 2 or self.vectors.shape[1] != self.embed_dim:
+                raise RuntimeError(f"vectors.npy shape mismatch. got {self.vectors.shape}, expected (*, {self.embed_dim})")
+        else:
+            self.vectors = None
 
         # bm25
         with open(BM25_PATH, "r", encoding="utf-8") as f:

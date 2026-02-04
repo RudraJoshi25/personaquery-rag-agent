@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import Dict, Any, List
 import re
+import os
+import time
 
 from src.core.config import TOP_K, INJECTION_GUARD_ENABLED
 from src.rag.guardrails import check_question
@@ -13,6 +15,8 @@ SOURCE_ID_RE = re.compile(r"\[\[cite:([0-9,\s]+)\]\]")
 
 
 def run_rag(question: str, top_k: int = TOP_K, mode: str = "chat") -> Dict[str, Any]:
+    debug = os.getenv("DEBUG_RAG", "0").lower() in {"1", "true", "yes"}
+    t0 = time.perf_counter()
     if INJECTION_GUARD_ENABLED:
         gr = check_question(question)
         if not gr.allowed:
@@ -20,6 +24,8 @@ def run_rag(question: str, top_k: int = TOP_K, mode: str = "chat") -> Dict[str, 
         question = gr.sanitized_question or question
 
     hits = retrieve(question, top_k=top_k)
+    if debug:
+        print(f"[rag] retrieve: {len(hits)} hits in {time.perf_counter() - t0:.2f}s", flush=True)
 
     # Assign stable source ids (1..N) for answer citations
     sources_with_ids = list(zip(range(1, len(hits) + 1), hits))
@@ -29,6 +35,8 @@ def run_rag(question: str, top_k: int = TOP_K, mode: str = "chat") -> Dict[str, 
     )
 
     answer = answer_with_groq(question, context, mode=mode)
+    if debug:
+        print(f"[rag] llm done in {time.perf_counter() - t0:.2f}s", flush=True)
 
     # Cite-only-if-used: match [[cite:1,2]] markers
     used_ids: set[int] = set()
