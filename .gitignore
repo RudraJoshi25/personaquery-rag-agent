@@ -219,6 +219,13 @@ storage/
 *.sqlite
 *.db
 
+# ChromaDB persistent store: regenerable from chunks.jsonl + vectors.npy
+# via `python -m scripts.migrate_to_chroma`; binary SQLite + HNSW index.
+app/backend/storage/chroma/
+
+# Runtime logs (latency, structured logs)
+app/backend/logs/
+
 # OS / IDE
 .DS_Store
-.vscode/
+.vscode/.claude/

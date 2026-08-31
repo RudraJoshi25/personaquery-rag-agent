@@ -1,159 +1,235 @@
+"""
+Retrieval pipeline.
+
+    query
+      -> conditional expansion into N paraphrases   (query_expansion.py)
+      -> per-variant hybrid search: dense + BM25     (run in parallel)
+      -> Reciprocal Rank Fusion across every list
+      -> source-diversity cap
+      -> late-interaction (ColBERT) rerank           (rerank.py)
+      -> top_k
+
+NOTE ON THE REMOVED IDENTITY BOOST
+----------------------------------
+This module used to detect "is this about Rudra?" with a regex and add a
+large constant to any chunk from the resume. That was a workaround for an
+ingestion bug: one 20-page research paper produced 82% of the index, so
+identity questions retrieved co-authors' contact details instead of Rudra's.
+
+The real fix was per-document chunk profiles (see doc_profiles.py), which
+rebalanced the index. What remains here is a principled, source-agnostic
+diversity cap: no single document may occupy more than a set number of slots
+in one result set. That solves the same failure without hard-coding which
+document is allowed to win, and without fighting the reranker.
+"""
 from __future__ import annotations
+
 from typing import List, Dict, Any, Tuple, Optional
+from concurrent.futures import ThreadPoolExecutor
 import os
 
-from src.core.config import EMBED_MODEL, TOP_K
+from src.core.config import TOP_K
+from src.core.logging import log_event
 from src.rag.store import HybridStore
+from src.rag.doc_profiles import MAX_CHUNKS_PER_SOURCE_IN_RESULTS
+from src.rag.query_expansion import expand_query
+from src.rag.rerank import rerank as rerank_hits
 
-
-# singletons
-_model = None
+RRF_K = int(os.getenv("RRF_K", "60"))
 _store: Optional[HybridStore] = None
 
 
-def _get_model():
-    global _model
-    if _model is None:
-        from sentence_transformers import SentenceTransformer
-        _model = SentenceTransformer(EMBED_MODEL)
-    return _model
-
-
 def _get_store() -> HybridStore:
-    """
-    Loads persisted hybrid store:
-      storage/chunks.jsonl
-      storage/vectors.npy
-      storage/bm25.json
-    """
+    """Loads storage/chunks.jsonl + vectors.npy + bm25.json once per process."""
     global _store
     if _store is not None:
         return _store
 
-    # Default embed dim for all-MiniLM-L6-v2 is 384.
-    # If you switch embedding model later, update this or compute it dynamically.
-    embed_dim = int(os.getenv("EMBED_DIM", "384"))
+    from src.rag.embedder import get_embedder
+
+    embed_dim = int(os.getenv("EMBED_DIM", "0")) or get_embedder().dim
     st = HybridStore(embed_dim=embed_dim)
     vector_enabled = os.getenv("RAG_VECTOR_ENABLED", "1").lower() in {"1", "true", "yes"}
-    loaded = st.load(load_vectors=vector_enabled)
-    if not loaded:
+    if not st.load(load_vectors=vector_enabled):
         raise RuntimeError(
-            "RAG store not found. Run ingestion to create storage/chunks.jsonl, vectors.npy, bm25.json"
+            "RAG store not found. Run ingestion to create storage/chunks.jsonl, "
+            "vectors.npy, bm25.json"
         )
     _store = st
     return st
 
 
-def _rrf_fuse(
-    vec_ranked: List[int],
-    bm25_ranked: List[int],
-    k: int = 60,
-) -> List[Tuple[int, float]]:
+def _rrf_fuse(ranked_lists: List[List[int]], k: int = RRF_K) -> Dict[int, float]:
     """
-    Reciprocal Rank Fusion (RRF) over doc ids.
-    Robust because it doesn't require score calibration between BM25 and cosine similarity.
+    Reciprocal Rank Fusion over any number of ranked id lists.
+
+    RRF is used rather than score averaging because BM25 scores and cosine
+    similarities live on incomparable scales, and normalising them requires
+    calibration that shifts every time the corpus changes. Rank position is
+    stable and needs no tuning. Extending it from 2 lists to N is free, which
+    is what makes multi-query expansion cheap to fuse.
     """
     scores: Dict[int, float] = {}
-
-    for rank, doc_id in enumerate(vec_ranked):
-        scores[doc_id] = scores.get(doc_id, 0.0) + 1.0 / (k + rank + 1)
-
-    for rank, doc_id in enumerate(bm25_ranked):
-        scores[doc_id] = scores.get(doc_id, 0.0) + 1.0 / (k + rank + 1)
-
-    fused = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-    return fused
+    for ranked in ranked_lists:
+        for rank, doc_id in enumerate(ranked):
+            scores[doc_id] = scores.get(doc_id, 0.0) + 1.0 / (k + rank + 1)
+    return scores
 
 
-def retrieve(question: str, top_k: int = TOP_K) -> List[Dict[str, Any]]:
-    """
-    Hybrid retrieval:
-      - Vector search (cosine)
-      - BM25 keyword search
-      - RRF fusion
-    Fallback:
-      - If embedding fails, return BM25 only
-    """
-    store = _get_store()
+def _search_one(
+    store: HybridStore,
+    query: str,
+    cand_k: int,
+    vector_enabled: bool,
+) -> Tuple[List[int], List[int], Dict[int, float]]:
+    """One query -> (vector_ranked_ids, bm25_ranked_ids, vec_scores)."""
+    bm25_ranked = [doc_id for doc_id, _ in store.search_bm25(query, top_k=cand_k)]
 
-    # Pull more candidates than final top_k for better fusion
-    cand_k = max(top_k * 4, 12)
-
-    # BM25 always available
-    bm25_hits = store.search_bm25(question, top_k=cand_k)
-    bm25_ranked_ids = [doc_id for doc_id, _ in bm25_hits]
-
-    # Vector retrieval (may fail). Allow disabling for low-memory deployments.
-    vec_ranked_ids: List[int] = []
-    vec_scores_by_id: Dict[int, float] = {}
-
-    vector_enabled = os.getenv("RAG_VECTOR_ENABLED", "1").lower() in {"1", "true", "yes"}
+    vec_ranked: List[int] = []
+    vec_scores: Dict[int, float] = {}
     if vector_enabled:
-        model = _get_model()
         try:
-            q_vec = model.encode([question], normalize_embeddings=True)[0].tolist()
-            vec_hits = store.search_vector(q_vec, top_k=cand_k)
-            vec_ranked_ids = [doc_id for doc_id, _ in vec_hits]
-            vec_scores_by_id = {doc_id: float(score) for doc_id, score in vec_hits}
+            from src.rag.cache import cached_embed
+            from src.rag.embedder import get_embedder
+
+            embedder = get_embedder()
+            q_vec, _ = cached_embed(query, embedder.embed_query)
+            hits = store.search_vector(q_vec, top_k=cand_k)
+            vec_ranked = [doc_id for doc_id, _ in hits]
+            vec_scores = {doc_id: float(s) for doc_id, s in hits}
         except Exception:
-            # fallback = BM25-only
-            vec_ranked_ids = []
+            vec_ranked = []  # BM25-only fallback
 
-    # Fuse
-    if vec_ranked_ids:
-        fused = _rrf_fuse(vec_ranked_ids, bm25_ranked_ids, k=60)
-        fused_ids = [doc_id for doc_id, _ in fused[:top_k]]
-        fused_rrf_score = {doc_id: float(score) for doc_id, score in fused}
-    else:
-        # BM25-only fallback
-        fused_ids = bm25_ranked_ids[:top_k]
-        fused_rrf_score = {doc_id: 0.0 for doc_id in fused_ids}
+    return vec_ranked, bm25_ranked, vec_scores
 
-    # Build final hits
-    hits: List[Dict[str, Any]] = []
-    for doc_id in fused_ids:
-        ch = store.chunks[int(doc_id)]
-        m = ch.metadata
-        in_vec = int(doc_id) in vec_scores_by_id
-        in_bm25 = int(doc_id) in bm25_ranked_ids
-        if in_vec and in_bm25:
-            channel = "hybrid"
-        elif in_vec:
-            channel = "vector"
+
+def _apply_diversity_cap(
+    ordered_ids: List[int],
+    store: HybridStore,
+    max_per_source: int = MAX_CHUNKS_PER_SOURCE_IN_RESULTS,
+) -> List[int]:
+    """
+    Keep the fused order, but stop any one file from monopolising the context
+    window. Overflow chunks are appended after the diverse set rather than
+    discarded, so recall is preserved when there is nothing else to show.
+    """
+    kept: List[int] = []
+    overflow: List[int] = []
+    per_source: Dict[str, int] = {}
+
+    for doc_id in ordered_ids:
+        src = str(store.chunks[int(doc_id)].metadata.get("file_name", "?"))
+        if per_source.get(src, 0) < max_per_source:
+            kept.append(doc_id)
+            per_source[src] = per_source.get(src, 0) + 1
         else:
-            channel = "keyword"
+            overflow.append(doc_id)
 
-        hits.append(
-            {
-                "score": float(fused_rrf_score.get(int(doc_id), 0.0)),
-                "text": ch.text,
-                "metadata": {
-                    **m,
-                    # helpful debug fields:
-                    "doc_id": int(doc_id),
-                    "vec_sim": float(vec_scores_by_id.get(int(doc_id), 0.0)),
-                    "channel": channel,
-                },
-            }
-        )
+    return kept + overflow
 
-    # Optional score thresholding
+
+def retrieve(
+    question: str,
+    top_k: int = TOP_K,
+    trace_id: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    store = _get_store()
+    vector_enabled = os.getenv("RAG_VECTOR_ENABLED", "1").lower() in {"1", "true", "yes"}
+
+    queries = expand_query(question, trace_id=trace_id)
+
+    # Over-fetch: the reranker can only reorder what retrieval handed it, so
+    # the candidate pool must be wider than the final answer.
+    cand_k = max(top_k * 4, 16)
+
+    # Variants are independent, and each is dominated by an embedding call —
+    # running them serially would multiply latency by the number of variants.
+    if len(queries) > 1:
+        with ThreadPoolExecutor(max_workers=min(len(queries), 4)) as pool:
+            results = list(pool.map(
+                lambda q: _search_one(store, q, cand_k, vector_enabled), queries
+            ))
+    else:
+        results = [_search_one(store, queries[0], cand_k, vector_enabled)]
+
+    ranked_lists: List[List[int]] = []
+    vec_scores_all: Dict[int, float] = {}
+    bm25_seen: set = set()
+    vec_seen: set = set()
+
+    for vec_ranked, bm25_ranked, vec_scores in results:
+        if vec_ranked:
+            ranked_lists.append(vec_ranked)
+            vec_seen.update(vec_ranked)
+        if bm25_ranked:
+            ranked_lists.append(bm25_ranked)
+            bm25_seen.update(bm25_ranked)
+        for doc_id, s in vec_scores.items():
+            vec_scores_all[doc_id] = max(vec_scores_all.get(doc_id, 0.0), s)
+
+    if not ranked_lists:
+        return []
+
+    fused = _rrf_fuse(ranked_lists)
+    ordered = sorted(fused.keys(), key=lambda d: fused[d], reverse=True)
+
+    # Drop ids the chunk store doesn't have. An external vector backend can
+    # legitimately return an id that no longer exists (stale entries after the
+    # corpus shrinks, a partially-written index, a backend restored from an
+    # older snapshot). Without this, one orphaned id raised IndexError and
+    # took down EVERY query — a data-freshness problem became a total outage.
+    n_chunks = len(store.chunks)
+    valid = [d for d in ordered if 0 <= int(d) < n_chunks]
+    if len(valid) != len(ordered):
+        log_event("WARN", "stale_vector_ids_dropped", trace_id=trace_id,
+                  dropped=len(ordered) - len(valid), n_chunks=n_chunks,
+                  hint="vector backend is out of sync with chunks.jsonl; re-run ingestion")
+    ordered = _apply_diversity_cap(valid, store)
+
+    # Build hit dicts for the rerank stage.
+    candidates: List[Dict[str, Any]] = []
+    for doc_id in ordered[: cand_k * 2]:
+        ch = store.chunks[int(doc_id)]
+        in_vec = int(doc_id) in vec_seen
+        in_bm25 = int(doc_id) in bm25_seen
+        channel = "hybrid" if (in_vec and in_bm25) else ("vector" if in_vec else "keyword")
+
+        colbert_vec = None
+        if store.colbert_vectors is not None:
+            colbert_vec = store.colbert_vectors[int(doc_id)]
+
+        candidates.append({
+            "score": float(fused.get(int(doc_id), 0.0)),
+            "text": ch.text,
+            "colbert_vec": colbert_vec,
+            "metadata": {
+                **ch.metadata,
+                "doc_id": int(doc_id),
+                "vec_sim": float(vec_scores_all.get(int(doc_id), 0.0)),
+                "channel": channel,
+            },
+        })
+
+    # Dedupe identical text, keeping the best-scoring copy. Keyed on content,
+    # not (file, page): single-page documents like the resume hold contact,
+    # skills and projects on one page, and keying on page collapses them.
+    deduped: Dict[str, Dict[str, Any]] = {}
+    for h in candidates:
+        key = " ".join((h.get("text") or "").split())
+        if key not in deduped or h["score"] > deduped[key]["score"]:
+            deduped[key] = h
+    candidates = sorted(deduped.values(), key=lambda x: x["score"], reverse=True)
+
     min_score = float(os.getenv("RAG_MIN_SCORE", "0") or "0")
     if min_score > 0:
-        hits = [h for h in hits if h.get("score", 0.0) >= min_score]
+        candidates = [h for h in candidates if h["score"] >= min_score]
 
-    # Dedupe by (file_name, page_label) keeping best score
-    deduped: Dict[tuple[str, str], Dict[str, Any]] = {}
-    for h in hits:
-        m = h.get("metadata", {}) or {}
-        key = (str(m.get("file_name", "unknown")), str(m.get("page_label", "n/a")))
-        if key not in deduped or h.get("score", 0.0) > deduped[key].get("score", 0.0):
-            deduped[key] = h
-    hits = list(deduped.values())
+    log_event(
+        "INFO", "retrieval_candidates", trace_id=trace_id,
+        n_queries=len(queries), n_candidates=len(candidates),
+    )
 
-    # Keep deterministic order by score desc
-    hits = sorted(hits, key=lambda x: x.get("score", 0.0), reverse=True)[:top_k]
-    return hits
+    return rerank_hits(question, candidates, top_k, trace_id=trace_id)
 
 
 def make_context_pack(
@@ -161,22 +237,19 @@ def make_context_pack(
     max_chars: int = 12000,
     source_ids: Optional[List[int]] = None,
 ) -> str:
-    """
-    Context pack given to the LLM. Includes file + page/section identifiers.
-    """
+    """Context block handed to the LLM, with citable source identifiers."""
     blocks = []
     total = 0
     for idx, h in enumerate(hits):
         m = h["metadata"]
         file_name = m.get("file_name", "unknown")
         page = m.get("page_label", "?")
-        section = m.get("section", None)
+        section = m.get("section") or "Document"
 
-        section_label = section or "Document"
         if source_ids and idx < len(source_ids):
-            header = f"[SOURCE {source_ids[idx]}] {file_name} | p.{page} | {section_label}"
+            header = f"[SOURCE {source_ids[idx]}] {file_name} | p.{page} | {section}"
         else:
-            header = f"[{file_name} | p.{page} | {section_label}]"
+            header = f"[{file_name} | p.{page} | {section}]"
 
         block = header + "\n" + h["text"]
         if total + len(block) > max_chars:

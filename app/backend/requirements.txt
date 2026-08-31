@@ -1,8 +1,29 @@
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 python-dotenv==1.0.1
+requests>=2.31.0
+
+# Retrieval
 rank-bm25
+# fastembed runs dense + ColBERT late-interaction embeddings on ONNX Runtime.
+# It replaces sentence-transformers (and therefore torch, ~2GB installed),
+# which is what made this service too heavy for a 512MB free-tier container.
+fastembed>=0.4.0
+# No upper bound: fastembed>=0.5 requires numpy>=2.1 on Python 3.13, while
+# chromadb only needs numpy>=1.22.5. Pinning <2.0 here made pip's resolver
+# fail outright and (on a machine with sentence-transformers already
+# installed from a prior run) silently fall back to that backend instead.
+numpy>=1.26.0
+
+# Ingestion
 pypdf==4.3.1
-sentence-transformers==3.0.1
-groq==0.9.0
-numpy<2.0.0
+
+# Generation (Anthropic Messages API is called with plain `requests`, so no
+# provider SDK is needed — one less dependency in the deploy image).
+
+# Optional: alternative vector backend. Not required for the numpy store.
+chromadb==1.5.9
+
+# sentence-transformers is no longer installed by default. The embedder still
+# supports it via EMBED_BACKEND=st for local A/B comparison:
+#   pip install sentence-transformers==3.0.1

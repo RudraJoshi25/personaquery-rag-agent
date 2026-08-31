@@ -1,0 +1,454 @@
+{
+  "summary": {
+    "timestamp": "2026-06-29T11:44:47",
+    "n": 20,
+    "top_k": 8,
+    "retrieval_hit_rate": 0.95,
+    "retrieval_mean_recall_at_k": 0.95,
+    "retrieval_mean_source_precision_at_k": 0.575,
+    "answer_pass_rate": 0.5,
+    "citation_pass_rate": 0.55
+  },
+  "items": [
+    {
+      "id": "q01",
+      "question": "What is my email address?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.5,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "My email address is rudrajoshi.cs@gmail.com [[cite:1,3]].",
+      "retrieved_files": [
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Patent PDF.pdf",
+        "Patent PDF.pdf",
+        "Patent PDF.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q02",
+      "question": "What is my phone number?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.375,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "My phone number is +61466988797 [[cite:2]].",
+      "retrieved_files": [
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Patent PDF.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q03",
+      "question": "Where am I based / located?",
+      "hit_at_k": false,
+      "recall_at_k": 0.0,
+      "source_precision_at_k": 0.25,
+      "answer_keyword_pass": false,
+      "missing_keywords": [
+        "Sydney"
+      ],
+      "citation_pass": true,
+      "answer": "I am based in Vadodara, India [[cite:1,3]].",
+      "retrieved_files": [
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q04",
+      "question": "What is my educational background?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.75,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "I have a Masters in Computer Science from the University of Wollongong, which I pursued from Jul '23 to Jun '25 in Wollongong, Australia [[cite:1,3]].",
+      "retrieved_files": [
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q05",
+      "question": "What programming languages do I know?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.5,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "I know programming languages such as Python, JavaScript, Java, and SQL [[cite:1,3]].",
+      "retrieved_files": [
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q06",
+      "question": "Which AI/ML frameworks have I used?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.625,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "I have used various AI/ML frameworks, including Pandas, NumPy, Scikit-Learn, TensorFlow, PyTorch, and OpenCV [[cite:2]]. Additionally, I have experience with LLM, RAG, Hugging Face, and LangChain, as well as Prompt Engineering and PEFT fine-tuning [[cite:2]]. I have also utilized Git, Github, and MLflow for MLOps and Dev Practices [[cite:2]]. Furthermore, I have worked with Brain-Computer Interface (BCI), Electrooculography (EOG), and Electroencephalography (EEG) in projects such as Cognitive Chair [[cite:3,7]].",
+      "retrieved_files": [
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q07",
+      "question": "What internships have I done?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.375,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "I have done three internships: Junior Android Application Development Intern at TSPL, Multi Domain Intern at Gurukula, Tntra Engineering, and Full Stack Intern at Gurukula, Tntra Engineering [[cite:2]]. These internships have helped me gain experience in Android app development, web applications, and working on different projects [[cite:2,3]]. I was able to learn various tools and technologies, including Spring Boot, MySQL, and RESTful API architecture, during these internships [[cite:2]].",
+      "retrieved_files": [
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q08",
+      "question": "What awards have I received?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.5,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "I have received the Best Paper Award for my work on the Cognitive Chair project [[cite:2,1]]. This award was given by IEEE Explore in December 2022 [[cite:2,3]].",
+      "retrieved_files": [
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Rudra_Joshi_Resume.pdf"
+      ]
+    },
+    {
+      "id": "q09",
+      "question": "What projects have I built?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.875,
+      "answer_keyword_pass": false,
+      "missing_keywords": [
+        "HealthEchoLink"
+      ],
+      "citation_pass": false,
+      "answer": "LLM error: 429 {\"error\":{\"message\":\"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kfhfvfjzfpx8kq0fy8ksr7ea` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Used 10902, Requested 1595. Please try again in 2.485s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}\n",
+      "retrieved_files": [
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q10",
+      "question": "Summarize my professional profile.",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.625,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "I am an AI/ML engineer with experience in designing, building, and deploying production ML systems end-to-end [[cite:2]]. My professional experience includes internships in Android application development, full stack development, and multi-domain projects [[cite:3]]. I have worked on various technologies such as Spring Boot, MySQL, and RESTful API architecture, and have experience in data visualization and statistical data analysis [[cite:3]]. I am currently pursuing a Master's in Computer Science at the University of Wollongong [[cite:4]]. My skills and experience make me a strong candidate for roles in AI/ML engineering and software development [[cite:2,3]].",
+      "retrieved_files": [
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Patent PDF.pdf"
+      ]
+    },
+    {
+      "id": "q11",
+      "question": "What is the title of the patent?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.25,
+      "answer_keyword_pass": false,
+      "missing_keywords": [
+        "Face Recognition"
+      ],
+      "citation_pass": false,
+      "answer": "LLM error: 429 {\"error\":{\"message\":\"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kfhfvfjzfpx8kq0fy8ksr7ea` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Used 11544, Requested 1301. Please try again in 4.225s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}\n",
+      "retrieved_files": [
+        "Patent PDF.pdf",
+        "Patent PDF.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q12",
+      "question": "What is the patent application number?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.375,
+      "answer_keyword_pass": false,
+      "missing_keywords": [
+        "202211058943"
+      ],
+      "citation_pass": false,
+      "answer": "LLM error: 429 {\"error\":{\"message\":\"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kfhfvfjzfpx8kq0fy8ksr7ea` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Used 11289, Requested 1391. Please try again in 3.4s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}\n",
+      "retrieved_files": [
+        "Patent PDF.pdf",
+        "Patent PDF.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Patent PDF.pdf"
+      ]
+    },
+    {
+      "id": "q13",
+      "question": "What neural network architectures does the patent describe?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.375,
+      "answer_keyword_pass": false,
+      "missing_keywords": [
+        "neural network"
+      ],
+      "citation_pass": false,
+      "answer": "LLM error: 429 {\"error\":{\"message\":\"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kfhfvfjzfpx8kq0fy8ksr7ea` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Used 11036, Requested 1450. Please try again in 2.43s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}\n",
+      "retrieved_files": [
+        "Patent PDF.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Patent PDF.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Patent PDF.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q14",
+      "question": "What is the patent journal number?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.25,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "The patent journal number is 42/2022 [[cite:2,7]].",
+      "retrieved_files": [
+        "Patent PDF.pdf",
+        "Patent PDF.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q15",
+      "question": "What is the Cognitive-Chair project about?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.75,
+      "answer_keyword_pass": false,
+      "missing_keywords": [
+        "wheelchair"
+      ],
+      "citation_pass": false,
+      "answer": "LLM error: 429 {\"error\":{\"message\":\"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kfhfvfjzfpx8kq0fy8ksr7ea` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Used 11590, Requested 1965. Please try again in 7.774999999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}\n",
+      "retrieved_files": [
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q16",
+      "question": "What are the main brainwave frequencies mentioned?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 1.0,
+      "answer_keyword_pass": false,
+      "missing_keywords": [
+        "Beta"
+      ],
+      "citation_pass": false,
+      "answer": "LLM error: 429 {\"error\":{\"message\":\"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kfhfvfjzfpx8kq0fy8ksr7ea` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Used 11332, Requested 2116. Please try again in 7.24s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}\n",
+      "retrieved_files": [
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q17",
+      "question": "What microcontroller is used in the wheelchair design?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 1.0,
+      "answer_keyword_pass": false,
+      "missing_keywords": [
+        "Arduino"
+      ],
+      "citation_pass": false,
+      "answer": "LLM error: 429 {\"error\":{\"message\":\"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kfhfvfjzfpx8kq0fy8ksr7ea` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Used 11066, Requested 2557. Please try again in 8.115s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}\n",
+      "retrieved_files": [
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q18",
+      "question": "Which bluetooth module does the system use?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.875,
+      "answer_keyword_pass": false,
+      "missing_keywords": [
+        "HC-06"
+      ],
+      "citation_pass": false,
+      "answer": "LLM error: 429 {\"error\":{\"message\":\"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kfhfvfjzfpx8kq0fy8ksr7ea` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Used 10813, Requested 2042. Please try again in 4.274999999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}\n",
+      "retrieved_files": [
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Patent PDF.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q19",
+      "question": "What is a Brain-Computer Interface according to the paper?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.875,
+      "answer_keyword_pass": false,
+      "missing_keywords": [
+        "brain"
+      ],
+      "citation_pass": false,
+      "answer": "LLM error: 429 {\"error\":{\"message\":\"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kfhfvfjzfpx8kq0fy8ksr7ea` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Used 10549, Requested 1957. Please try again in 2.53s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}\n",
+      "retrieved_files": [
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Rudra_Joshi_Resume.pdf"
+      ]
+    },
+    {
+      "id": "q20",
+      "question": "What is my contact email (not a co-author's)?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.375,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "My contact email is rudrajoshi.cs@gmail.com [[cite:1,3]].",
+      "retrieved_files": [
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    }
+  ]
+}

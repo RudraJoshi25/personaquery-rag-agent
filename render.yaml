@@ -1,0 +1,79 @@
+# Render blueprint for the PersonaQuery backend.
+# Commit this and Render can rebuild the service from scratch reproducibly
+# instead of relying on dashboard-only settings.
+
+services:
+  - type: web
+    name: personaquery-api
+    runtime: docker
+    dockerfilePath: ./app/backend/Dockerfile
+    dockerContext: ./app/backend
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # --- secrets: set these in the Render dashboard, never in git ---
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+      # --- generation (Anthropic only) ---
+      - key: ANTHROPIC_CHAT_MODEL
+        value: claude-sonnet-5
+      - key: ANTHROPIC_EXPANSION_MODEL
+        value: claude-haiku-4-5-20251001
+      # Precomputed answers for common questions — served without any
+      # provider call at all. Rebuild with scripts/precompute_faq.py after
+      # each ingest; this is the main cost and availability lever now that
+      # there is a single provider.
+      - key: FAQ_CACHE_ENABLED
+        value: "true"
+      - key: FAQ_MIN_SIMILARITY
+        value: "0.86"
+
+      # --- retrieval ---
+      - key: RAG_STORAGE_DIR
+        value: storage
+      - key: PRIVATE_DATA_DIR
+        value: ../../data/private
+      - key: EMBED_MODEL
+        value: all-MiniLM-L6-v2
+      - key: EMBED_BACKEND
+        value: fastembed
+      - key: EMBED_DIM
+        value: "384"
+      - key: TOP_K
+        value: "8"
+      - key: RAG_VECTOR_ENABLED
+        value: "true"
+      - key: RAG_HYBRID_ENABLED
+        value: "true"
+      - key: VECTOR_BACKEND
+        value: numpy
+
+      # --- query expansion / fusion / rerank ---
+      - key: QUERY_EXPANSION_ENABLED
+        value: "true"
+      - key: QUERY_VARIANTS
+        value: "3"
+      - key: RRF_K
+        value: "60"
+      - key: RERANK_ENABLED
+        value: "true"
+      - key: COLBERT_MODEL
+        value: colbert-ir/colbertv2.0
+
+      # --- safety / limits ---
+      - key: INJECTION_GUARD_ENABLED
+        value: "true"
+      - key: MAX_QUESTION_CHARS
+        value: "2000"
+      - key: RATE_LIMIT_REQUESTS
+        value: "20"
+      - key: RATE_LIMIT_WINDOW_S
+        value: "60"
+
+      # --- CORS: portfolio + PersonaQuery frontends ---
+      # Regex covers localhost dev and any *.vercel.app preview deploy.
+      # Add your custom domain here when the portfolio gets one.
+      - key: CORS_ALLOW_ORIGIN_REGEX
+        value: ^https?://(localhost|127\.0\.0\.1)(:\d+)?$|^https://.*\.vercel\.app$

@@ -1,0 +1,446 @@
+{
+  "summary": {
+    "timestamp": "2026-08-18T15:13:40",
+    "n": 20,
+    "top_k": 8,
+    "retrieval_hit_rate": 0.9,
+    "retrieval_mean_recall_at_k": 0.9,
+    "retrieval_mean_source_precision_at_k": 0.3375,
+    "answer_pass_rate": 0.7,
+    "citation_pass_rate": 0.8
+  },
+  "items": [
+    {
+      "id": "q01",
+      "question": "What is my email address?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.125,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "Your canonical contact email is rudrajoshi.cs@gmail.com [[cite:1,5]].",
+      "retrieved_files": [
+        "linkedin-profile.md",
+        "Patent PDF.pdf",
+        "Patent PDF.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "linkedin-profile.md",
+        "projects.md",
+        "Patent PDF.pdf"
+      ]
+    },
+    {
+      "id": "q02",
+      "question": "What is my phone number?",
+      "hit_at_k": false,
+      "recall_at_k": 0.0,
+      "source_precision_at_k": 0.0,
+      "answer_keyword_pass": false,
+      "missing_keywords": [
+        "466988797"
+      ],
+      "citation_pass": true,
+      "answer": "Not stated in the documents [[cite:6]].",
+      "retrieved_files": [
+        "Patent PDF.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "awards-and-certifications.md",
+        "awards-and-certifications.md",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "linkedin-profile.md",
+        "awards-and-certifications.md",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q03",
+      "question": "Where am I based / located?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.125,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "You are based in Sydney, New South Wales, Australia. [[cite:1,6]]",
+      "retrieved_files": [
+        "linkedin-profile.md",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "linkedin-profile.md",
+        "Patent PDF.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q04",
+      "question": "What is my educational background?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.125,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "I earned a Master of Computer Science from the University of Wollongong in Australia, studying there from July 2023 to September 2025, and previously completed a B.Tech in Computer Science & Engineering with a Data Science specialisation at Gujarat State Fertilizers and Chemicals University from 2019 to 2023 [[cite:3]].\n\nMy coursework covered a broad range of topics, including foundation and mathematics subjects such as Communication Skills and multiple Mathematics courses, core computer‑science subjects like Programming, Data Structures & Algorithms, Operating Systems, Computer Networks, and Web Technologies, as well as electronics and hardware modules such as Digital Electronics and Microprocessor & Interfacing; advanced modules listed in later semesters include Computer Vision Algorithms, Modern Cryptography, Big Data Analytics, Machine Learning Algorithms, Security Essentials, AI and Cybersecurity, and a double‑weighted Professional Capstone Project [[cite:5,8]].\n\nI graduated with High Distinctions in several key areas—including Programming and Data Structures, Web Development, Strategic Network Design, and the Professional Capstone Project—and earned Distinctions in Big Data Analytics, Security Essentials, AI and Cybersecurity, and System Analysis and Project Management, reflecting a strong focus on machine learning, big data, computer vision, and security [[cite:6]].",
+      "retrieved_files": [
+        "education.md",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Rudra_Joshi_Resume.pdf",
+        "linkedin-profile.md",
+        "education.md",
+        "education.md",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "education.md"
+      ]
+    },
+    {
+      "id": "q05",
+      "question": "What programming languages do I know?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.25,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "My known programming languages include Python, Java, JavaScript, TypeScript, C++, and SQL. [[cite:1,2,3,4]]",
+      "retrieved_files": [
+        "linkedin-profile.md",
+        "Rudra_Joshi_Resume.pdf",
+        "education.md",
+        "linkedin-profile.md",
+        "education.md",
+        "education.md",
+        "Rudra_Joshi_Resume.pdf",
+        "awards-and-certifications.md"
+      ]
+    },
+    {
+      "id": "q06",
+      "question": "Which AI/ML frameworks have I used?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.375,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "You have used AI/ML frameworks such as scikit‑learn, PyTorch, LangChain, LlamaIndex, Sentence‑Transformers, rank‑bm25, ReAct agent, Multi‑agent Systems, Claude API, Hugging Face Transformers, Hugging Face Inference API, and TensorFlow [[cite:1,2]].",
+      "retrieved_files": [
+        "Rudra_Joshi_Resume.pdf",
+        "linkedin-profile.md",
+        "Rudra_Joshi_Resume.pdf",
+        "linkedin-profile.md",
+        "linkedin-profile.md",
+        "Rudra_Joshi_Resume.pdf",
+        "awards-and-certifications.md",
+        "awards-and-certifications.md"
+      ]
+    },
+    {
+      "id": "q07",
+      "question": "What internships have I done?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.125,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "You have completed four distinct internship experiences [[cite:1]].\n\n- Full Stack Intern (Summer Intern) at Tntra in Vadodara, India from June 2022 to July 2022 [[cite:1]].\n- Multi Domain Intern at Tntra in Vadodara, India from September 2022 to December 2022 [[cite:2]].\n- Engineering Intern (Full Stack + Multi‑Domain) at Gurukula, Tntra Engineering in Vadodara, India from June 2022 to December 2022, where you built and shipped web‑app modules [[cite:3]].\n- Android Application Development Intern at TSPL in Vadodara, India from January 2023 to July 2023, where you built an Android app with backend REST APIs and analytics charts [[cite:3]].",
+      "retrieved_files": [
+        "linkedin-profile.md",
+        "linkedin-profile.md",
+        "Rudra_Joshi_Resume.pdf",
+        "education.md",
+        "linkedin-profile.md",
+        "education.md",
+        "linkedin-profile.md",
+        "education.md"
+      ]
+    },
+    {
+      "id": "q08",
+      "question": "What awards have I received?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.125,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "You have received the IEEE Best Paper Award at the 4th International Conference on Artificial Intelligence and Speech Technology (AIST‑2022) [[cite:1,3]].\n\nYou also received the Achiever’s Award from GSFC University for your B.Tech. Computer Science and Engineering program (academic year 2021‑22, conferred 26 January 2023) [[cite:1,2]].",
+      "retrieved_files": [
+        "linkedin-profile.md",
+        "awards-and-certifications.md",
+        "awards-and-certifications.md",
+        "Rudra_Joshi_Resume.pdf",
+        "awards-and-certifications.md",
+        "linkedin-profile.md",
+        "awards-and-certifications.md",
+        "education.md"
+      ]
+    },
+    {
+      "id": "q09",
+      "question": "What projects have I built?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.25,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "I have built several AI‑focused projects, including HealthEcho, PersonaQuery, JobPilot, and a Deep Reinforcement Learning application [[cite:1]]. Both PersonaQuery and HealthEcho were developed end‑to‑end as part of my independent AI engineer work [[cite:4]]. I also created custom evaluation frameworks for LLM outputs to assess generation quality [[cite:4]].",
+      "retrieved_files": [
+        "linkedin-profile.md",
+        "projects.md",
+        "linkedin-profile.md",
+        "linkedin-profile.md",
+        "linkedin-profile.md",
+        "linkedin-profile.md",
+        "Rudra_Joshi_Resume.pdf",
+        "Rudra_Joshi_Resume.pdf"
+      ]
+    },
+    {
+      "id": "q10",
+      "question": "Summarize my professional profile.",
+      "hit_at_k": false,
+      "recall_at_k": 0.0,
+      "source_precision_at_k": 0.0,
+      "answer_keyword_pass": false,
+      "missing_keywords": [
+        "AI/ML"
+      ],
+      "citation_pass": true,
+      "answer": "Rudra Joshi is a technically‑focused professional whose public profile highlights a blend of advanced academic training and hands‑on project experience in machine learning, big data, and cybersecurity [[cite:1,2]].  \n\nHe graduated with High Distinctions in core subjects such as Programming and Data Structures, Web Development, Strategic Network Design, and a 12‑credit Professional Capstone Project, while also earning distinctions in Big Data Analytics, Security Essentials, AI and Cybersecurity, and System Analysis and Project Management [[cite:2,8]]. His coursework concentrated on machine learning, big data, computer vision, and security, reflecting the curriculum of a Machine Learning and Big Data major [[cite:2,8]].  \n\nAmong his notable projects, Rudra built HealthEcho, a symptom‑analysis chatbot, and PersonaQuery, a grounded retrieval‑augmented generation assistant that answers questions strictly from his own documents using dense embeddings, BM25 keyword search, and reciprocal rank fusion [[cite:4,6,7]].  \n\nHe also completed the “AI in Action” job simulation program by Forage, which covered prompt engineering and workflow automation [[cite:5]].  \n\nThe PersonaQuery system showcases his expertise with modern AI stacks, employing the Llama‑3.3‑70B model via the Groq API, a FastAPI backend, and a Next.js frontend, and it integrates both dense vector and sparse keyword retrieval techniques [[cite:6]].",
+      "retrieved_files": [
+        "linkedin-profile.md",
+        "education.md",
+        "linkedin-profile.md",
+        "projects.md",
+        "awards-and-certifications.md",
+        "projects.md",
+        "projects.md",
+        "education.md"
+      ]
+    },
+    {
+      "id": "q11",
+      "question": "What is the title of the patent?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.25,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "The patent is titled **Intelligent Face Recognition System Using Deep Recurrent Neural Network** [[cite:1,3]].",
+      "retrieved_files": [
+        "Patent PDF.pdf",
+        "linkedin-profile.md",
+        "Rudra_Joshi_Resume.pdf",
+        "Patent PDF.pdf",
+        "awards-and-certifications.md",
+        "projects.md",
+        "education.md",
+        "Rudra_Joshi_Resume.pdf"
+      ]
+    },
+    {
+      "id": "q12",
+      "question": "What is the patent application number?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.375,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "The patent application number is 202211058943 A[[cite:2,3,4,5]].",
+      "retrieved_files": [
+        "Patent PDF.pdf",
+        "Patent PDF.pdf",
+        "awards-and-certifications.md",
+        "Rudra_Joshi_Resume.pdf",
+        "projects.md",
+        "projects.md",
+        "Patent PDF.pdf",
+        "linkedin-profile.md"
+      ]
+    },
+    {
+      "id": "q13",
+      "question": "What neural network architectures does the patent describe?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.25,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "The patent describes a face‑recognition system that uses both a convolutional neural network (CNN) and a recurrent neural network (RNN) to generate a consistent key from facial images [[cite:5]]. These two architectures are combined into a deep recurrent neural network to provide robust face‑recognition capabilities [[cite:1,5]].",
+      "retrieved_files": [
+        "Rudra_Joshi_Resume.pdf",
+        "awards-and-certifications.md",
+        "Patent PDF.pdf",
+        "projects.md",
+        "Patent PDF.pdf",
+        "linkedin-profile.md",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "education.md"
+      ]
+    },
+    {
+      "id": "q14",
+      "question": "What is the patent journal number?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.25,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "The patent journal number is 42/2022 [[cite:1,3]].",
+      "retrieved_files": [
+        "Patent PDF.pdf",
+        "Patent PDF.pdf",
+        "awards-and-certifications.md",
+        "Rudra_Joshi_Resume.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "linkedin-profile.md",
+        "projects.md",
+        "projects.md"
+      ]
+    },
+    {
+      "id": "q15",
+      "question": "What is the Cognitive-Chair project about?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.25,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "The Cognitive‑Chair project is an AI‑driven wheelchair that can be operated without physical input, using brain‑derived signals captured by a headband [[cite:5]]. It interprets EEG and EOG data via electro‑oculography, sends the signals to a mobile application, and translates them into commands that move the wheelchair, enabling paraplegic and quadriplegic users to control the device directly with their thoughts [[cite:4]]. The system was developed during a B.Tech program at GSFC University and has been recognized with a Best Paper Award at the 4th International Conference on Artificial Intelligence and Speech Technology (AIST‑2022) and a related Indian patent for an Intelligent Face Recognition System [[cite:1,5]].",
+      "retrieved_files": [
+        "education.md",
+        "linkedin-profile.md",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "projects.md",
+        "Rudra_Joshi_Resume.pdf",
+        "awards-and-certifications.md",
+        "awards-and-certifications.md"
+      ]
+    },
+    {
+      "id": "q16",
+      "question": "What are the main brainwave frequencies mentioned?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 1.0,
+      "answer_keyword_pass": true,
+      "missing_keywords": [],
+      "citation_pass": true,
+      "answer": "The primary brainwave frequencies referenced are Gamma, Beta, Alpha, Theta, and Delta [[cite:1,2]]. These five bands are commonly identified in electroencephalography (EEG) studies and are used to characterize different mental states and cognitive processes [[cite:1,2]].",
+      "retrieved_files": [
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q17",
+      "question": "What microcontroller is used in the wheelchair design?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 1.0,
+      "answer_keyword_pass": false,
+      "missing_keywords": [
+        "Arduino"
+      ],
+      "citation_pass": false,
+      "answer": "The answer service is temporarily unavailable. Please try again shortly.",
+      "retrieved_files": [
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q18",
+      "question": "Which bluetooth module does the system use?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.875,
+      "answer_keyword_pass": false,
+      "missing_keywords": [
+        "HC-06"
+      ],
+      "citation_pass": false,
+      "answer": "The answer service is temporarily unavailable. Please try again shortly.",
+      "retrieved_files": [
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Patent PDF.pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q19",
+      "question": "What is a Brain-Computer Interface according to the paper?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 1.0,
+      "answer_keyword_pass": false,
+      "missing_keywords": [
+        "brain"
+      ],
+      "citation_pass": false,
+      "answer": "The answer service is temporarily unavailable. Please try again shortly.",
+      "retrieved_files": [
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "Copy of Cognitive-Chair (Final Draft).pdf"
+      ]
+    },
+    {
+      "id": "q20",
+      "question": "What is my contact email (not a co-author's)?",
+      "hit_at_k": true,
+      "recall_at_k": 1.0,
+      "source_precision_at_k": 0.0,
+      "answer_keyword_pass": false,
+      "missing_keywords": [
+        "rudrajoshi.cs@gmail.com"
+      ],
+      "citation_pass": false,
+      "answer": "The answer service is temporarily unavailable. Please try again shortly.",
+      "retrieved_files": [
+        "linkedin-profile.md",
+        "projects.md",
+        "awards-and-certifications.md",
+        "projects.md",
+        "projects.md",
+        "Copy of Cognitive-Chair (Final Draft).pdf",
+        "projects.md",
+        "projects.md"
+      ]
+    }
+  ]
+}

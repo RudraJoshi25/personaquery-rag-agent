@@ -7,11 +7,19 @@ from typing import List, Dict, Any, Tuple, Optional
 import numpy as np
 from rank_bm25 import BM25Okapi
 
+from src.core.config import VECTOR_BACKEND, CHROMA_DIR, CHROMA_COLLECTION
+
 STORAGE_DIR = os.getenv("RAG_STORAGE_DIR", "storage")
 
 CHUNKS_PATH = os.path.join(STORAGE_DIR, "chunks.jsonl")
 VECTORS_PATH = os.path.join(STORAGE_DIR, "vectors.npy")
 BM25_PATH = os.path.join(STORAGE_DIR, "bm25.json")
+# Per-chunk ColBERT (late-interaction) token vectors, precomputed at ingest
+# time. Without this, every query re-runs the ~110M-param ColBERT model over
+# the full candidate pool, which is what pushed per-query rerank latency to
+# 60-100s+ on CPU. The corpus is static between ingests, so paying that cost
+# once per chunk here (instead of once per chunk per query) is the fix.
+COLBERT_VECS_PATH = os.path.join(STORAGE_DIR, "colbert_vecs.npz")
 
 
 def ensure_storage_dir():
@@ -40,17 +48,33 @@ class HybridStore:
     def __init__(self, embed_dim: int):
         self.embed_dim = embed_dim
         self.chunks: List[StoredChunk] = []
-        self.vectors: Optional[np.ndarray] = None  # (N, D) float32 normalized
+        self.vectors: Optional[np.ndarray] = None  # (N, D) float32 normalized (numpy backend only)
         self.bm25: Optional[BM25Okapi] = None
         self._bm25_tokens: List[List[str]] = []
+        self.vector_backend = None  # external vector store (e.g. Chroma)
+        # Parallel to self.chunks: colbert_vectors[i] is the (n_tokens, dim)
+        # late-interaction matrix for chunk i, or None if not precomputed
+        # (older store, or ColBERT was unavailable at ingest time).
+        self.colbert_vectors: Optional[List[Optional[np.ndarray]]] = None
 
     def is_built(self) -> bool:
         return (len(self.chunks) > 0) and (self.bm25 is not None)
 
+    def _attach_chroma(self):
+        from src.rag.vector_backend import get_vector_backend
+        self.vector_backend = get_vector_backend(
+            "chroma", persist_dir=CHROMA_DIR, collection_name=CHROMA_COLLECTION
+        )
+        return self.vector_backend
+
     def load(self, load_vectors: bool = True) -> bool:
         if not (os.path.exists(CHUNKS_PATH) and os.path.exists(BM25_PATH)):
             return False
-        if load_vectors and not os.path.exists(VECTORS_PATH):
+
+        use_chroma = VECTOR_BACKEND == "chroma"
+
+        # Legacy numpy backend needs vectors.npy on disk; Chroma does not.
+        if load_vectors and not use_chroma and not os.path.exists(VECTORS_PATH):
             return False
 
         # chunks
@@ -60,19 +84,38 @@ class HybridStore:
                 obj = json.loads(line)
                 self.chunks.append(StoredChunk(text=obj["text"], metadata=obj["metadata"]))
 
-        # vectors (optional)
-        if load_vectors:
+        # vectors
+        if not load_vectors:
+            self.vectors = None
+        elif use_chroma:
+            # Vectors live in Chroma; do NOT load the matrix into RAM.
+            self.vectors = None
+            self._attach_chroma()
+        else:
             self.vectors = np.load(VECTORS_PATH).astype("float32")
             if self.vectors.ndim != 2 or self.vectors.shape[1] != self.embed_dim:
                 raise RuntimeError(f"vectors.npy shape mismatch. got {self.vectors.shape}, expected (*, {self.embed_dim})")
-        else:
-            self.vectors = None
 
         # bm25
         with open(BM25_PATH, "r", encoding="utf-8") as f:
             bm = json.load(f)
         self._bm25_tokens = bm["tokens"]
         self.bm25 = BM25Okapi(self._bm25_tokens)
+
+        # colbert vectors (optional: absent on stores built before this cache existed)
+        if os.path.exists(COLBERT_VECS_PATH):
+            npz = np.load(COLBERT_VECS_PATH, allow_pickle=True)
+            arr = npz["vecs"]
+            self.colbert_vectors = [
+                None if v is None or (hasattr(v, "size") and v.size == 0) else np.asarray(v, dtype="float32")
+                for v in arr
+            ]
+            if len(self.colbert_vectors) != len(self.chunks):
+                # Stale/mismatched cache (e.g. re-ingested chunks without regenerating this
+                # file) — degrade to on-the-fly encoding rather than serve wrong vectors.
+                self.colbert_vectors = None
+        else:
+            self.colbert_vectors = None
 
         return True
 
@@ -89,6 +132,17 @@ class HybridStore:
 
         with open(BM25_PATH, "w", encoding="utf-8") as f:
             json.dump({"tokens": self._bm25_tokens}, f)
+
+        if self.colbert_vectors is not None:
+            arr = np.empty(len(self.colbert_vectors), dtype=object)
+            for i, v in enumerate(self.colbert_vectors):
+                arr[i] = v if v is not None else np.empty((0, 0), dtype="float32")
+            np.savez(COLBERT_VECS_PATH, vecs=arr)
+
+    def set_colbert_vectors(self, vecs: List[Optional[np.ndarray]]) -> None:
+        if len(vecs) != len(self.chunks):
+            raise ValueError(f"colbert vector/chunk mismatch: {len(vecs)} vs {len(self.chunks)}")
+        self.colbert_vectors = vecs
 
     def build(self, embeddings: List[List[float]], chunks: List[StoredChunk]) -> None:
         if not chunks:
@@ -110,6 +164,31 @@ class HybridStore:
         self._bm25_tokens = [simple_tokenize(c.text) for c in chunks]
         self.bm25 = BM25Okapi(self._bm25_tokens)
 
+        # Populate the external vector backend (Chroma) so retrieval reads from it.
+        if VECTOR_BACKEND == "chroma":
+            self.upsert_vectors_to_backend(X)
+
+    def upsert_vectors_to_backend(self, vectors: np.ndarray) -> int:
+        """Replace the backend's contents with the current chunk vectors.
+
+        Resets first: ids are positional chunk indices, so upserting alone
+        leaves orphaned vectors behind whenever the corpus shrinks (see
+        ChromaBackend.reset).
+        """
+        if self.vector_backend is None:
+            self._attach_chroma()
+        reset = getattr(self.vector_backend, "reset", None)
+        if callable(reset):
+            reset()
+        ids = [str(i) for i in range(len(self.chunks))]
+        self.vector_backend.upsert(
+            ids=ids,
+            embeddings=[v.tolist() for v in vectors],
+            documents=[c.text for c in self.chunks],
+            metadatas=[c.metadata for c in self.chunks],
+        )
+        return self.vector_backend.count()
+
     def search_bm25(self, query: str, top_k: int = 10) -> List[Tuple[int, float]]:
         if self.bm25 is None:
             return []
@@ -119,6 +198,12 @@ class HybridStore:
         return [(int(i), float(s)) for i, s in ranked if s > 0]
 
     def search_vector(self, query_vec: List[float], top_k: int = 10) -> List[Tuple[int, float]]:
+        # External backend (Chroma) takes precedence when attached.
+        if self.vector_backend is not None:
+            q = np.array(query_vec, dtype="float32")
+            q = q / (np.linalg.norm(q) + 1e-12)
+            return self.vector_backend.query(q.tolist(), top_k=top_k)
+
         if self.vectors is None:
             return []
         q = np.array(query_vec, dtype="float32")

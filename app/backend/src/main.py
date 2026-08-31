@@ -31,10 +31,22 @@ app.add_middleware(
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
-    # Ensures frontend always gets JSON (and CORS headers still apply)
+    # Log the real error server-side (with a trace id for correlation), but
+    # NEVER leak the exception message, stack trace, secrets, or provider
+    # error bodies to the client. Return a clean, generic JSON response.
+    from src.core.logging import log_event, new_trace_id
+    tid = new_trace_id()
+    log_event(
+        "ERROR", "unhandled_exception", trace_id=tid,
+        path=str(request.url.path), error_type=type(exc).__name__, error=str(exc),
+    )
     return JSONResponse(
         status_code=500,
-        content={"error": "Internal Server Error", "detail": str(exc)},
+        content={
+            "error": "internal_error",
+            "message": "Something went wrong. Please try again.",
+            "trace_id": tid,
+        },
     )
 
 @app.get("/health")
