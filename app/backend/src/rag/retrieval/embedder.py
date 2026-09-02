@@ -1,7 +1,7 @@
 from __future__ import annotations
+
 import os
 from dataclasses import dataclass
-from typing import List
 
 from sentence_transformers import SentenceTransformer
 
@@ -17,7 +17,7 @@ class Embedder:
         # ✅ dim works for sentence-transformers models
         self.dim = int(self.model.get_sentence_embedding_dimension())
 
-    def embed(self, texts: List[str]) -> List[List[float]]:
+    def embed(self, texts: list[str]) -> list[list[float]]:
         # ✅ Guard: no texts
         if not texts:
             return []

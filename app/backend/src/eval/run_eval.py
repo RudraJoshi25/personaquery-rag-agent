@@ -1,15 +1,17 @@
 # src/eval/run_eval.py
 from __future__ import annotations
+
 import json
 import re
-from src.rag.rag import run_rag
 
-CITE_RE = re.compile(r"\[[^\]]+\|\s*p\.[^\]]+\|\s*[^\]]+\]")
+from src.rag.chat import run_rag
+
+CITE_RE = re.compile(r"\[\[cite:[0-9]+(?:\s*,\s*[0-9]+)*\]\]")
 
 def run():
     passed = 0
     total = 0
-    with open("src/eval/qa.jsonl", "r", encoding="utf-8") as f:
+    with open("src/eval/qa.jsonl", encoding="utf-8") as f:
         for line in f:
             if not line.strip():
                 continue

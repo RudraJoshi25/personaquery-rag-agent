@@ -1,14 +1,14 @@
 from __future__ import annotations
-from typing import List, Dict, Any, Tuple, Optional
+
 import os
+from typing import Any
 
 from src.core.config import EMBED_MODEL, TOP_K
-from src.rag.store import HybridStore
-
+from src.rag.retrieval.store import HybridStore
 
 # singletons
 _model = None
-_store: Optional[HybridStore] = None
+_store: HybridStore | None = None
 
 
 def _get_model():
@@ -44,16 +44,22 @@ def _get_store() -> HybridStore:
     return st
 
 
+def get_store() -> HybridStore:
+    """Public accessor for the singleton store, reused by src.rag.interview
+    so it shares one loaded embedding model/index instead of a second copy."""
+    return _get_store()
+
+
 def _rrf_fuse(
-    vec_ranked: List[int],
-    bm25_ranked: List[int],
+    vec_ranked: list[int],
+    bm25_ranked: list[int],
     k: int = 60,
-) -> List[Tuple[int, float]]:
+) -> list[tuple[int, float]]:
     """
     Reciprocal Rank Fusion (RRF) over doc ids.
     Robust because it doesn't require score calibration between BM25 and cosine similarity.
     """
-    scores: Dict[int, float] = {}
+    scores: dict[int, float] = {}
 
     for rank, doc_id in enumerate(vec_ranked):
         scores[doc_id] = scores.get(doc_id, 0.0) + 1.0 / (k + rank + 1)
@@ -65,7 +71,7 @@ def _rrf_fuse(
     return fused
 
 
-def retrieve(question: str, top_k: int = TOP_K) -> List[Dict[str, Any]]:
+def retrieve(question: str, top_k: int = TOP_K) -> list[dict[str, Any]]:
     """
     Hybrid retrieval:
       - Vector search (cosine)
@@ -84,8 +90,8 @@ def retrieve(question: str, top_k: int = TOP_K) -> List[Dict[str, Any]]:
     bm25_ranked_ids = [doc_id for doc_id, _ in bm25_hits]
 
     # Vector retrieval (may fail). Allow disabling for low-memory deployments.
-    vec_ranked_ids: List[int] = []
-    vec_scores_by_id: Dict[int, float] = {}
+    vec_ranked_ids: list[int] = []
+    vec_scores_by_id: dict[int, float] = {}
 
     vector_enabled = os.getenv("RAG_VECTOR_ENABLED", "1").lower() in {"1", "true", "yes"}
     if vector_enabled:
@@ -110,7 +116,7 @@ def retrieve(question: str, top_k: int = TOP_K) -> List[Dict[str, Any]]:
         fused_rrf_score = {doc_id: 0.0 for doc_id in fused_ids}
 
     # Build final hits
-    hits: List[Dict[str, Any]] = []
+    hits: list[dict[str, Any]] = []
     for doc_id in fused_ids:
         ch = store.chunks[int(doc_id)]
         m = ch.metadata
@@ -143,7 +149,7 @@ def retrieve(question: str, top_k: int = TOP_K) -> List[Dict[str, Any]]:
         hits = [h for h in hits if h.get("score", 0.0) >= min_score]
 
     # Dedupe by (file_name, page_label) keeping best score
-    deduped: Dict[tuple[str, str], Dict[str, Any]] = {}
+    deduped: dict[tuple[str, str], dict[str, Any]] = {}
     for h in hits:
         m = h.get("metadata", {}) or {}
         key = (str(m.get("file_name", "unknown")), str(m.get("page_label", "n/a")))
@@ -157,9 +163,9 @@ def retrieve(question: str, top_k: int = TOP_K) -> List[Dict[str, Any]]:
 
 
 def make_context_pack(
-    hits: List[Dict[str, Any]],
+    hits: list[dict[str, Any]],
     max_chars: int = 12000,
-    source_ids: Optional[List[int]] = None,
+    source_ids: list[int] | None = None,
 ) -> str:
     """
     Context pack given to the LLM. Includes file + page/section identifiers.
