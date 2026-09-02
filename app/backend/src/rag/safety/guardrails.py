@@ -1,8 +1,9 @@
-# src/rag/guardrails.py
+# src/rag/safety/guardrails.py
 #
 # This is a cheap, easily-bypassed first filter (paraphrase, translation, or
 # splitting a phrase across turns all defeat it trivially). The real security
-# boundary is the system prompt's grounding rules in llm_groq.py plus the
+# boundary is the system prompt's grounding rules in
+# src/rag/generation/llm_groq.py plus the
 # fact that the LLM only ever sees retrieved document context, not arbitrary
 # tool/data access. Don't invest further engineering here (e.g. an ML
 # classifier) - diminishing returns for a public single-purpose Q&A bot with

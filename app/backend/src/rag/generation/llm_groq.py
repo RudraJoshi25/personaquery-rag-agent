@@ -1,4 +1,4 @@
-# src/rag/llm_groq.py
+# src/rag/generation/llm_groq.py
 from __future__ import annotations
 
 import logging

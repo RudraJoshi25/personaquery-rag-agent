@@ -59,7 +59,7 @@ PYTHONPATH=. python -m scripts.ingest
 ```
 
 This rebuilds `storage/{chunks.jsonl,vectors.npy,bm25.json}`. Ingestion redacts third-party emails
-and phone numbers found in the source text (see `src/rag/pii_redact.py`) — spot-check the output
+and phone numbers found in the source text (see `src/rag/ingestion/pii_redact.py`) — spot-check the output
 before committing, especially for phone numbers, since the redaction regex is intentionally
 conservative to avoid mangling patent numbers/DOIs.
 

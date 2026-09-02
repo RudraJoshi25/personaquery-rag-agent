@@ -1,4 +1,4 @@
-# src/rag/pii_redact.py
+# src/rag/ingestion/pii_redact.py
 from __future__ import annotations
 
 import re
@@ -13,7 +13,7 @@ EMAIL_RE = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
 # the corpus includes patent/paper numeric content (DOIs, patent numbers,
 # dates, equation/figure numbers) that a loose digit-grouping regex would
 # false-positive on heavily. Manual spot-check after re-ingestion is still
-# required (see docs/README instructions).
+# required (see the "Re-ingesting documents" section of the root README.md).
 PHONE_RE = re.compile(
     r"(?<!\w)(?:\+\d{1,3}[\s\-.]?)(?:\(?\d{2,4}\)?[\s\-.]?){2,5}\d{2,4}(?!\w)"
     r"|(?<!\w)\(\d{2,4}\)[\s\-.]?\d{3,4}[\s\-.]?\d{3,4}(?!\w)"
