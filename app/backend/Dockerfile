@@ -29,9 +29,13 @@ RUN pip install --prefix=/install -r requirements.txt
 # the first request isn't slowed by a cold model download.
 FROM builder AS model-cache
 ARG EMBED_MODEL
-ENV PYTHONPATH=/install/lib/python3.12/site-packages
 ENV HF_HOME=/model-cache
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('${EMBED_MODEL}')"
+# Install into the interpreter's own prefix (exactly as the runtime stage
+# does) rather than pointing PYTHONPATH at a hard-coded
+# .../python3.12/site-packages, which would silently break this stage if
+# PYTHON_VERSION is overridden to any other minor version.
+RUN cp -a /install/. /usr/local/ \
+    && python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('${EMBED_MODEL}')"
 
 FROM python:${PYTHON_VERSION} AS runtime
 WORKDIR /app
