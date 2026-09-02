@@ -117,7 +117,7 @@ export default function ChatUI() {
   }
 
   async function fetchWithRetry(input: RequestInfo, init: RequestInit, retries = 2, backoffMs = 800) {
-    let lastErr: any = null;
+    let lastErr: unknown = null;
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const res = await fetch(input, init);
@@ -129,7 +129,7 @@ export default function ChatUI() {
           }
         }
         return res;
-      } catch (e: any) {
+      } catch (e) {
         lastErr = e;
         if (attempt < retries) {
           await new Promise((r) => setTimeout(r, backoffMs * (attempt + 1)));
@@ -185,8 +185,8 @@ export default function ChatUI() {
           sources,
         },
       ]);
-    } catch (e: any) {
-      setError(e?.message || "Failed to fetch");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to fetch");
       setMessages((prev) => [
         ...prev,
         {

@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend lint + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: |
+            app/backend/requirements.txt
+            app/backend/requirements-dev.txt
+      - name: Install dependencies
+        working-directory: app/backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Lint (ruff)
+        working-directory: app/backend
+        run: ruff check .
+      - name: Test (pytest)
+        working-directory: app/backend
+        env:
+          GROQ_API_KEY: ci-dummy-key
+        run: pytest --cov=src --cov-report=term-missing
+
+  frontend:
+    name: Frontend lint + typecheck + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: app/frontend-next/package-lock.json
+      - name: Install dependencies
+        working-directory: app/frontend-next
+        run: npm ci
+      - name: Lint
+        working-directory: app/frontend-next
+        run: npm run lint
+      - name: Typecheck
+        working-directory: app/frontend-next
+        run: npx tsc --noEmit
+      - name: Build
+        working-directory: app/frontend-next
+        run: npm run build
+
+  docker-build:
+    name: Docker build check (optional deploy path - non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image
+        run: docker build -f app/backend/Dockerfile -t personaquery-backend:ci app/backend
+      - name: Smoke test container
+        run: |
+          docker run -d --rm -p 8000:8000 -e GROQ_API_KEY=dummy-ci-key --name pq-ci personaquery-backend:ci
+          for i in $(seq 1 15); do
+            curl -fsS http://localhost:8000/health/live && break
+            sleep 2
+          done
+          curl -fsS http://localhost:8000/health/live
+          docker stop pq-ci

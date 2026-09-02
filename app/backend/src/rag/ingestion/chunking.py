@@ -1,9 +1,9 @@
 # src/rag/chunking.py
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Dict, Any, List, Optional
 import re
+from dataclasses import dataclass
+from typing import Any
 
 # Simple heading detection: works for resumes + papers + patents reasonably well
 # - Lines in ALL CAPS
@@ -33,17 +33,17 @@ def clean_text(t: str) -> str:
 @dataclass
 class Chunk:
     text: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
-def _split_into_sections(text: str) -> List[tuple[str, str]]:
+def _split_into_sections(text: str) -> list[tuple[str, str]]:
     """
     Returns list of (section_title, section_text)
     If no headings exist, one section "Document".
     """
     lines = text.split("\n")
-    sections: List[tuple[str, List[str]]] = []
+    sections: list[tuple[str, list[str]]] = []
     cur_title = "Document"
-    cur_buf: List[str] = []
+    cur_buf: list[str] = []
 
     for line in lines:
         if is_heading(line):
@@ -57,14 +57,14 @@ def _split_into_sections(text: str) -> List[tuple[str, str]]:
     if cur_buf:
         sections.append((cur_title, cur_buf))
 
-    out: List[tuple[str, str]] = []
+    out: list[tuple[str, str]] = []
     for title, buf in sections:
         body = clean_text("\n".join(buf))
         if body:
             out.append((title, body))
     return out if out else [("Document", clean_text(text))]
 
-def _chunk_by_words(text: str, max_words: int = 220, overlap_words: int = 40) -> List[str]:
+def _chunk_by_words(text: str, max_words: int = 220, overlap_words: int = 40) -> list[str]:
     words = text.split()
     if not words:
         return []
@@ -81,9 +81,9 @@ def _chunk_by_words(text: str, max_words: int = 220, overlap_words: int = 40) ->
 def make_chunks(
     text: str,
     file_name: str,
-    page_label: Optional[str],
-    doc_id: Optional[str] = None,
-) -> List[Chunk]:
+    page_label: str | None,
+    doc_id: str | None = None,
+) -> list[Chunk]:
     """
     Section-aware chunking:
     1) split by headings into sections
@@ -94,7 +94,7 @@ def make_chunks(
         return []
 
     sections = _split_into_sections(text)
-    out: List[Chunk] = []
+    out: list[Chunk] = []
 
     for section_title, section_text in sections:
         parts = _chunk_by_words(section_text, max_words=220, overlap_words=40)
@@ -111,17 +111,3 @@ def make_chunks(
             out.append(Chunk(text=part, metadata=meta))
 
     return out
-
-
-def chunk_text(text: str, file_name: str, page_num: int) -> List[Chunk]:
-    """
-    Backwards-compatible wrapper used by older ingestion paths.
-    """
-    return make_chunks(text, file_name=file_name, page_label=str(page_num), doc_id=file_name)
-
-
-def chunk_text_for_file(text: str, file_name: str, page_num: int) -> List[Chunk]:
-    """
-    Alias for chunk_text for older scripts.
-    """
-    return chunk_text(text, file_name=file_name, page_num=page_num)

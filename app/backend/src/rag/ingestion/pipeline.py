@@ -1,14 +1,16 @@
 from __future__ import annotations
+
 import os
-from typing import List
+
 from pypdf import PdfReader
 
-from src.rag.chunking import make_chunks
-from src.rag.store import HybridStore, StoredChunk
-from src.rag.embedder import get_embedder
+from src.rag.ingestion.chunking import make_chunks
+from src.rag.ingestion.pii_redact import redact_text
+from src.rag.retrieval.embedder import get_embedder
+from src.rag.retrieval.store import HybridStore, StoredChunk
 
 
-def read_pdf_pages(path: str) -> List[dict]:
+def read_pdf_pages(path: str) -> list[dict]:
     reader = PdfReader(path)
     pages = []
     for i, page in enumerate(reader.pages):
@@ -17,11 +19,11 @@ def read_pdf_pages(path: str) -> List[dict]:
     return pages
 
 
-def ingest_paths(paths: List[str], store: HybridStore) -> None:
+def ingest_paths(paths: list[str], store: HybridStore) -> None:
     embedder = get_embedder()
 
     max_chunks = int(os.getenv("MAX_CHUNKS", "600"))  # ✅ cap to avoid RAM blowups
-    all_chunks: List[StoredChunk] = []
+    all_chunks: list[StoredChunk] = []
 
     for p in paths:
         file_name = os.path.basename(p)
@@ -32,6 +34,8 @@ def ingest_paths(paths: List[str], store: HybridStore) -> None:
                 raw = (pg["text"] or "").strip()
                 if len(raw) < 20:
                     continue  # skip empty pages
+
+                raw = redact_text(raw)
 
                 chunks = make_chunks(
                     raw,
@@ -50,11 +54,13 @@ def ingest_paths(paths: List[str], store: HybridStore) -> None:
                     break
 
         else:
-            with open(p, "r", encoding="utf-8", errors="ignore") as f:
+            with open(p, encoding="utf-8", errors="ignore") as f:
                 txt = (f.read() or "").strip()
 
             if len(txt) < 20:
                 continue
+
+            txt = redact_text(txt)
 
             chunks = make_chunks(txt, file_name=file_name, page_label=None, doc_id=file_name)
             for c in chunks:
@@ -80,7 +86,7 @@ def ingest_paths(paths: List[str], store: HybridStore) -> None:
     if len(vectors) != len(all_chunks):
         raise RuntimeError(
             f"Vector/chunk mismatch: vectors={len(vectors)} chunks={len(all_chunks)}. "
-            "Ensure you filter empty/short chunks only in ingest_pipeline."
+            "Ensure you filter empty/short chunks only in src/rag/ingestion/pipeline.py."
         )
 
     store.build(vectors, all_chunks)

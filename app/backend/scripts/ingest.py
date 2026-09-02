@@ -3,15 +3,14 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import List
 
 from src.core.config import PRIVATE_DATA_DIR
-from src.rag.embedder import get_embedder
-from src.rag.store import HybridStore
-from src.rag.ingest_pipeline import ingest_paths
+from src.rag.ingestion.pipeline import ingest_paths
+from src.rag.retrieval.embedder import get_embedder
+from src.rag.retrieval.store import HybridStore
 
 
-def _collect_paths() -> List[str]:
+def _collect_paths() -> list[str]:
     """
     Collect PDFs/txt/md from your configured private data directory.
     PRIVATE_DATA_DIR resolves to ../../data/private (repo_root/data/private).

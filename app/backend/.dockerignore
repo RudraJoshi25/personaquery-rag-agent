@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+tests/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.md
+scripts/
+requirements-dev.txt
+pyproject.toml
+Dockerfile
+.dockerignore
+
+# storage/ is committed application data (the prebuilt RAG index), not a
+# build artifact - it is NOT ignored, and is required at runtime.

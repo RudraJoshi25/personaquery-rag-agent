@@ -1,0 +1,22 @@
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+  "slow: loads the real sentence-transformers model and/or the committed storage/ index",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# setup_logging() must run before any other import so early log calls are
+# formatted correctly - the E402 warnings here are intentional.
+"src/main.py" = ["E402"]
+# Long lines here are prose inside LLM system-prompt string literals -
+# wrapping mid-instruction risks subtly changing what the model sees.
+"src/rag/generation/llm_groq.py" = ["E501"]
