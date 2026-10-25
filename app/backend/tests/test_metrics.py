@@ -6,10 +6,10 @@ import pytest
 
 from src.eval.metrics import (
     has_citation,
-    keyword_match,
     hit_rate_at_k,
-    recall_at_k,
+    keyword_match,
     precision_at_k,
+    recall_at_k,
 )
 
 

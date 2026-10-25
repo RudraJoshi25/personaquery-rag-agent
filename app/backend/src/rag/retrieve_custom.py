@@ -24,19 +24,19 @@ document is allowed to win, and without fighting the reranker.
 """
 from __future__ import annotations
 
-from typing import List, Dict, Any, Tuple, Optional
-from concurrent.futures import ThreadPoolExecutor
 import os
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
-from src.core.config import TOP_K, RAG_VECTOR_ENABLED
+from src.core.config import RAG_VECTOR_ENABLED, TOP_K
 from src.core.logging import log_event
-from src.rag.store import HybridStore
 from src.rag.doc_profiles import MAX_CHUNKS_PER_SOURCE_IN_RESULTS
 from src.rag.query_expansion import expand_query
 from src.rag.rerank import rerank as rerank_hits
+from src.rag.store import HybridStore
 
 RRF_K = int(os.getenv("RRF_K", "60"))
-_store: Optional[HybridStore] = None
+_store: HybridStore | None = None
 
 
 def _get_store() -> HybridStore:
@@ -58,7 +58,7 @@ def _get_store() -> HybridStore:
     return st
 
 
-def _rrf_fuse(ranked_lists: List[List[int]], k: int = RRF_K) -> Dict[int, float]:
+def _rrf_fuse(ranked_lists: list[list[int]], k: int = RRF_K) -> dict[int, float]:
     """
     Reciprocal Rank Fusion over any number of ranked id lists.
 
@@ -68,7 +68,7 @@ def _rrf_fuse(ranked_lists: List[List[int]], k: int = RRF_K) -> Dict[int, float]
     stable and needs no tuning. Extending it from 2 lists to N is free, which
     is what makes multi-query expansion cheap to fuse.
     """
-    scores: Dict[int, float] = {}
+    scores: dict[int, float] = {}
     for ranked in ranked_lists:
         for rank, doc_id in enumerate(ranked):
             scores[doc_id] = scores.get(doc_id, 0.0) + 1.0 / (k + rank + 1)
@@ -80,12 +80,12 @@ def _search_one(
     query: str,
     cand_k: int,
     vector_enabled: bool,
-) -> Tuple[List[int], List[int], Dict[int, float]]:
+) -> tuple[list[int], list[int], dict[int, float]]:
     """One query -> (vector_ranked_ids, bm25_ranked_ids, vec_scores)."""
     bm25_ranked = [doc_id for doc_id, _ in store.search_bm25(query, top_k=cand_k)]
 
-    vec_ranked: List[int] = []
-    vec_scores: Dict[int, float] = {}
+    vec_ranked: list[int] = []
+    vec_scores: dict[int, float] = {}
     if vector_enabled:
         try:
             from src.rag.cache import cached_embed
@@ -103,18 +103,18 @@ def _search_one(
 
 
 def _apply_diversity_cap(
-    ordered_ids: List[int],
+    ordered_ids: list[int],
     store: HybridStore,
     max_per_source: int = MAX_CHUNKS_PER_SOURCE_IN_RESULTS,
-) -> List[int]:
+) -> list[int]:
     """
     Keep the fused order, but stop any one file from monopolising the context
     window. Overflow chunks are appended after the diverse set rather than
     discarded, so recall is preserved when there is nothing else to show.
     """
-    kept: List[int] = []
-    overflow: List[int] = []
-    per_source: Dict[str, int] = {}
+    kept: list[int] = []
+    overflow: list[int] = []
+    per_source: dict[str, int] = {}
 
     for doc_id in ordered_ids:
         src = str(store.chunks[int(doc_id)].metadata.get("file_name", "?"))
@@ -130,8 +130,8 @@ def _apply_diversity_cap(
 def retrieve(
     question: str,
     top_k: int = TOP_K,
-    trace_id: Optional[str] = None,
-) -> List[Dict[str, Any]]:
+    trace_id: str | None = None,
+) -> list[dict[str, Any]]:
     store = _get_store()
 
     queries = expand_query(question, trace_id=trace_id)
@@ -150,8 +150,8 @@ def retrieve(
     else:
         results = [_search_one(store, queries[0], cand_k, RAG_VECTOR_ENABLED)]
 
-    ranked_lists: List[List[int]] = []
-    vec_scores_all: Dict[int, float] = {}
+    ranked_lists: list[list[int]] = []
+    vec_scores_all: dict[int, float] = {}
     bm25_seen: set = set()
     vec_seen: set = set()
 
@@ -185,7 +185,7 @@ def retrieve(
     ordered = _apply_diversity_cap(valid, store)
 
     # Build hit dicts for the rerank stage.
-    candidates: List[Dict[str, Any]] = []
+    candidates: list[dict[str, Any]] = []
     for doc_id in ordered[: cand_k * 2]:
         ch = store.chunks[int(doc_id)]
         in_vec = int(doc_id) in vec_seen
@@ -211,7 +211,7 @@ def retrieve(
     # Dedupe identical text, keeping the best-scoring copy. Keyed on content,
     # not (file, page): single-page documents like the resume hold contact,
     # skills and projects on one page, and keying on page collapses them.
-    deduped: Dict[str, Dict[str, Any]] = {}
+    deduped: dict[str, dict[str, Any]] = {}
     for h in candidates:
         key = " ".join((h.get("text") or "").split())
         if key not in deduped or h["score"] > deduped[key]["score"]:
@@ -231,9 +231,9 @@ def retrieve(
 
 
 def make_context_pack(
-    hits: List[Dict[str, Any]],
+    hits: list[dict[str, Any]],
     max_chars: int = 12000,
-    source_ids: Optional[List[int]] = None,
+    source_ids: list[int] | None = None,
 ) -> str:
     """Context block handed to the LLM, with citable source identifiers."""
     blocks = []

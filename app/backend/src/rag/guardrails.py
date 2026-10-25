@@ -1,8 +1,8 @@
 # src/rag/guardrails.py
 from __future__ import annotations
+
 import re
 from dataclasses import dataclass
-from typing import Optional
 
 INJECTION_PATTERNS = [
     r"ignore (all|any|previous|prior) instructions",
@@ -14,8 +14,9 @@ INJECTION_PATTERNS = [
     r"make up (sources|citations|references)",
     r"bypass (safety|policy|guardrails)",
     r"print (the )?prompt",
-    # Bare "leak" blocked real questions ("data leakage in ML pipelines").
-    r"leak (the |your )?(system prompt|prompt|instructions)",
+    # Bare "leak" blocked real questions ("data leakage in ML pipelines");
+    # word boundaries skip "leakage", the window catches "leak your hidden rules".
+    r"\bleak\b.{0,30}\b(prompt|instructions|rules|system)\b",
 ]
 
 INJ_RE = re.compile("|".join(f"(?:{p})" for p in INJECTION_PATTERNS), re.IGNORECASE)
@@ -23,8 +24,8 @@ INJ_RE = re.compile("|".join(f"(?:{p})" for p in INJECTION_PATTERNS), re.IGNOREC
 @dataclass
 class GuardrailResult:
     allowed: bool
-    reason: Optional[str] = None
-    sanitized_question: Optional[str] = None
+    reason: str | None = None
+    sanitized_question: str | None = None
 
 def check_question(q: str) -> GuardrailResult:
     q2 = (q or "").strip()

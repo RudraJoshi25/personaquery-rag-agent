@@ -14,9 +14,8 @@ resume wins on merit instead of on a thumb pressed to the scale.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Dict, Optional
 import re
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
@@ -79,16 +78,16 @@ DEFAULT = PAPER
 
 # Filename-pattern -> profile. First match wins, so order matters.
 _RULES = [
-    (re.compile(r"resume|cv\b", re.I), RESUME),
-    (re.compile(r"transcript|academic|grade|marksheet", re.I), TRANSCRIPT),
-    (re.compile(r"linkedin|post|profile", re.I), SHORTFORM),
-    (re.compile(r"patent", re.I), PAPER),
-    (re.compile(r"paper|draft|ieee|journal|thesis", re.I), PAPER),
-    (re.compile(r"\.md$|project|readme", re.I), PROJECT_DOC),
+    (re.compile(r"resume|cv\b", re.IGNORECASE), RESUME),
+    (re.compile(r"transcript|academic|grade|marksheet", re.IGNORECASE), TRANSCRIPT),
+    (re.compile(r"linkedin|post|profile", re.IGNORECASE), SHORTFORM),
+    (re.compile(r"patent", re.IGNORECASE), PAPER),
+    (re.compile(r"paper|draft|ieee|journal|thesis", re.IGNORECASE), PAPER),
+    (re.compile(r"\.md$|project|readme", re.IGNORECASE), PROJECT_DOC),
 ]
 
 
-def profile_for(file_name: str, override: Optional[str] = None) -> ChunkProfile:
+def profile_for(file_name: str, override: str | None = None) -> ChunkProfile:
     """Pick a chunk profile from the filename, or an explicit override."""
     if override:
         got = BY_NAME.get(override.lower())
@@ -101,7 +100,7 @@ def profile_for(file_name: str, override: Optional[str] = None) -> ChunkProfile:
     return DEFAULT
 
 
-BY_NAME: Dict[str, ChunkProfile] = {
+BY_NAME: dict[str, ChunkProfile] = {
     p.name: p for p in (RESUME, TRANSCRIPT, PROJECT_DOC, SHORTFORM, PAPER)
 }
 

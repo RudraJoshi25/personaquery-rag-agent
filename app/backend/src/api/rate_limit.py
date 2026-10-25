@@ -13,30 +13,38 @@ from __future__ import annotations
 
 import threading
 import time
-from collections import defaultdict, deque
-from typing import Deque, Dict, Tuple
+from collections import deque
 
 from fastapi import HTTPException, Request
 
 from src.core.config import RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_S, TRUST_PROXY
 from src.core.logging import log_event
+from src.rag.cache import TTLCache
 
 
 class InProcessRateLimiter:
-    def __init__(self, limit: int, window_s: float):
+    def __init__(self, limit: int, window_s: float,
+                 maxsize: int = 10_000, ttl_s: float = 120.0):
         self.limit = limit
         self.window_s = window_s
-        self._hits: Dict[str, Deque[float]] = defaultdict(deque)
+        # Bounded: an attacker rotating IPs can't grow memory without limit.
+        # ttl_s must exceed window_s, or an active client's history expires
+        # mid-window. LRU eviction under a flood only ever forgets a client
+        # (a fresh window), never blocks one.
+        self._hits = TTLCache(maxsize=maxsize, ttl_s=max(ttl_s, window_s))
         self._lock = threading.Lock()
 
-    def check(self, client: str) -> Tuple[bool, float]:
+    def check(self, client: str) -> tuple[bool, float]:
         """Return (allowed, retry_after_s). Records the hit when allowed."""
         now = time.monotonic()
         cutoff = now - self.window_s
         with self._lock:
-            dq = self._hits[client]
+            dq = self._hits.get(client)
+            if dq is None:
+                dq = deque()
             while dq and dq[0] < cutoff:
                 dq.popleft()
+            self._hits.set(client, dq)  # refreshes TTL + LRU position
             if len(dq) >= self.limit:
                 retry_after = self.window_s - (now - dq[0])
                 return False, max(0.0, retry_after)
@@ -66,6 +74,10 @@ def client_id(request: Request) -> str:
     # ponytail: assumes exactly one trusted proxy hop; count hops from the
     # right if a CDN is ever put in front of Render.
     xff = request.headers.get("x-forwarded-for")
+    # TEMPORARY: confirm Render adds exactly one XFF hop (the last entry
+    # should be the caller's real IP). Logs IPs: remove once verified.
+    log_event("INFO", "xff_debug", xff=xff,
+              peer=request.client.host if request.client else None)
     if TRUST_PROXY and xff:
         return xff.split(",")[-1].strip()
     return request.client.host if request.client else "unknown"

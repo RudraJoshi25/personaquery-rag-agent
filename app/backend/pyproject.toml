@@ -1,0 +1,8 @@
+[tool.ruff]
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+# The pipeline is "degrade, never raise": logging, rerank, query expansion,
+# FAQ load and latency recording each catch Exception on purpose so an
+# optional step can never take a request down.
+ignore = ["BLE001", "S110", "S112"]

@@ -3,7 +3,11 @@ Latency benchmark: 20 queries, reports p50, p95, mean end-to-end.
 Run from app/backend/: python latency_bench.py
 """
 from __future__ import annotations
-import sys, os, time, statistics
+
+import os
+import statistics
+import sys
+import time
 
 sys.path.insert(0, os.path.dirname(__file__))
 

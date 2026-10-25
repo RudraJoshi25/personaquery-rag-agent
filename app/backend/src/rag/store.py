@@ -1,8 +1,9 @@
 from __future__ import annotations
+
 import json
 import os
 from dataclasses import dataclass
-from typing import List, Dict, Any, Tuple, Optional
+from typing import Any
 
 import numpy as np
 from rank_bm25 import BM25Okapi
@@ -24,7 +25,7 @@ def ensure_storage_dir():
     os.makedirs(STORAGE_DIR, exist_ok=True)
 
 
-def simple_tokenize(text: str) -> List[str]:
+def simple_tokenize(text: str) -> list[str]:
     import re
     return re.findall(r"[a-z0-9]+", (text or "").lower())
 
@@ -32,7 +33,7 @@ def simple_tokenize(text: str) -> List[str]:
 @dataclass
 class StoredChunk:
     text: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class HybridStore:
@@ -45,14 +46,14 @@ class HybridStore:
 
     def __init__(self, embed_dim: int):
         self.embed_dim = embed_dim
-        self.chunks: List[StoredChunk] = []
-        self.vectors: Optional[np.ndarray] = None  # (N, D) float32 normalized
-        self.bm25: Optional[BM25Okapi] = None
-        self._bm25_tokens: List[List[str]] = []
+        self.chunks: list[StoredChunk] = []
+        self.vectors: np.ndarray | None = None  # (N, D) float32 normalized
+        self.bm25: BM25Okapi | None = None
+        self._bm25_tokens: list[list[str]] = []
         # Parallel to self.chunks: colbert_vectors[i] is the (n_tokens, dim)
         # late-interaction matrix for chunk i, or None if not precomputed
         # (older store, or ColBERT was unavailable at ingest time).
-        self.colbert_vectors: Optional[List[Optional[np.ndarray]]] = None
+        self.colbert_vectors: list[np.ndarray | None] | None = None
 
     def is_built(self) -> bool:
         return (len(self.chunks) > 0) and (self.bm25 is not None)
@@ -108,8 +109,7 @@ class HybridStore:
         ensure_storage_dir()
 
         with open(CHUNKS_PATH, "w", encoding="utf-8") as f:
-            for ch in self.chunks:
-                f.write(json.dumps({"text": ch.text, "metadata": ch.metadata}, ensure_ascii=False) + "\n")
+            f.writelines(json.dumps({"text": ch.text, "metadata": ch.metadata}, ensure_ascii=False) + "\n" for ch in self.chunks)
 
         if self.vectors is None:
             raise RuntimeError("vectors missing")
@@ -124,12 +124,12 @@ class HybridStore:
                 arr[i] = v if v is not None else np.empty((0, 0), dtype="float32")
             np.savez(COLBERT_VECS_PATH, vecs=arr)
 
-    def set_colbert_vectors(self, vecs: List[Optional[np.ndarray]]) -> None:
+    def set_colbert_vectors(self, vecs: list[np.ndarray | None]) -> None:
         if len(vecs) != len(self.chunks):
             raise ValueError(f"colbert vector/chunk mismatch: {len(vecs)} vs {len(self.chunks)}")
         self.colbert_vectors = vecs
 
-    def build(self, embeddings: List[List[float]], chunks: List[StoredChunk]) -> None:
+    def build(self, embeddings: list[list[float]], chunks: list[StoredChunk]) -> None:
         if not chunks:
             raise ValueError("No chunks to build index.")
         if not embeddings:
@@ -149,7 +149,7 @@ class HybridStore:
         self._bm25_tokens = [simple_tokenize(c.text) for c in chunks]
         self.bm25 = BM25Okapi(self._bm25_tokens)
 
-    def search_bm25(self, query: str, top_k: int = 10) -> List[Tuple[int, float]]:
+    def search_bm25(self, query: str, top_k: int = 10) -> list[tuple[int, float]]:
         if self.bm25 is None:
             return []
         q = simple_tokenize(query)
@@ -157,7 +157,7 @@ class HybridStore:
         ranked = sorted(enumerate(scores), key=lambda x: x[1], reverse=True)[:top_k]
         return [(int(i), float(s)) for i, s in ranked if s > 0]
 
-    def search_vector(self, query_vec: List[float], top_k: int = 10) -> List[Tuple[int, float]]:
+    def search_vector(self, query_vec: list[float], top_k: int = 10) -> list[tuple[int, float]]:
         if self.vectors is None:
             return []
         q = np.array(query_vec, dtype="float32")

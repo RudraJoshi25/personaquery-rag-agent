@@ -8,7 +8,8 @@ from __future__ import annotations
 import random
 import threading
 import time
-from typing import Callable, Optional, Tuple, Type, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
 
 # --- typed errors -----------------------------------------------------------
@@ -23,7 +24,7 @@ class LLMError(Exception):
     """
     code = "llm_error"
 
-    def __init__(self, message: str = "", code: Optional[str] = None):
+    def __init__(self, message: str = "", code: str | None = None):
         super().__init__(message)
         if code:
             self.code = code
@@ -32,7 +33,7 @@ class LLMError(Exception):
 class LLMRateLimited(LLMError):
     code = "rate_limited"
 
-    def __init__(self, message: str = "", retry_after: Optional[float] = None):
+    def __init__(self, message: str = "", retry_after: float | None = None):
         super().__init__(message)
         self.retry_after = retry_after
 
@@ -46,7 +47,7 @@ class LLMServerError(LLMError):
 
 
 # Transient failures worth retrying.
-RETRYABLE: Tuple[Type[Exception], ...] = (LLMRateLimited, LLMTimeout, LLMServerError)
+RETRYABLE: tuple[type[Exception], ...] = (LLMRateLimited, LLMTimeout, LLMServerError)
 
 T = TypeVar("T")
 
@@ -59,9 +60,9 @@ def retry_with_backoff(
     base_delay: float = 1.0,
     max_delay: float = 30.0,
     jitter: bool = True,
-    retryable: Tuple[Type[Exception], ...] = RETRYABLE,
+    retryable: tuple[type[Exception], ...] = RETRYABLE,
     sleep: Callable[[float], None] = time.sleep,
-    on_retry: Optional[Callable[[int, Exception, float], None]] = None,
+    on_retry: Callable[[int, Exception, float], None] | None = None,
 ) -> T:
     """
     Call fn(); on a retryable exception, retry with exponential backoff

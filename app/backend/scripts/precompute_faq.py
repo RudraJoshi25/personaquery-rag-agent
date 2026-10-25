@@ -26,13 +26,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import numpy as np  # noqa: E402
+import numpy as np
 
-from src.rag.rag import run_rag  # noqa: E402
-from src.rag.embedder import DEFAULT_EMBED_MODEL, get_embedder  # noqa: E402
-from src.rag.faq_cache import index_sha  # noqa: E402
+from src.core.config import RAG_STORAGE_DIR as STORAGE_DIR
+from src.rag.embedder import DEFAULT_EMBED_MODEL, get_embedder
+from src.rag.faq_cache import index_sha
+from src.rag.rag import run_rag
 
-from src.core.config import RAG_STORAGE_DIR as STORAGE_DIR  # noqa: E402
 OUT_PATH = Path(STORAGE_DIR) / "faq_cache.json"
 QA_PATH = Path(__file__).resolve().parents[1] / "src" / "eval" / "qa.jsonl"
 

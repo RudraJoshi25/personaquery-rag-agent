@@ -1,5 +1,6 @@
 # src/core/config.py
 from __future__ import annotations
+
 import os
 from pathlib import Path
 
@@ -25,7 +26,7 @@ RAG_VECTOR_ENABLED = os.getenv("RAG_VECTOR_ENABLED", "true").lower() in {"1", "t
 INJECTION_GUARD_ENABLED = os.getenv("INJECTION_GUARD_ENABLED", "true").lower() in {"1", "true", "yes"}
 
 # API hardening
-MAX_QUESTION_CHARS = int(os.getenv("MAX_QUESTION_CHARS", "2000"))
+MAX_QUESTION_CHARS = int(os.getenv("MAX_QUESTION_CHARS", "300"))
 RATE_LIMIT_REQUESTS = int(os.getenv("RATE_LIMIT_REQUESTS", "20"))
 RATE_LIMIT_WINDOW_S = float(os.getenv("RATE_LIMIT_WINDOW_S", "60"))
 # Only true behind a reverse proxy that appends X-Forwarded-For (Render does).

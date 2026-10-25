@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 from starlette.testclient import TestClient
 
-from src.main import app
 from src.api import rate_limit, routes_chat
+from src.main import app
 
 
 @pytest.fixture
@@ -113,3 +113,18 @@ def test_spoofed_forwarded_for_cannot_dodge_limit(monkeypatch):
             for i in range(2)
         ]
     assert codes == [200, 429]
+
+
+def test_rate_limiter_memory_bounded():
+    lim = rate_limit.InProcessRateLimiter(limit=5, window_s=60, maxsize=100)
+    for i in range(1000):
+        lim.check(f"10.0.{i // 256}.{i % 256}")
+    assert lim._hits.stats()["size"] == 100
+
+
+def test_cors_rejects_foreign_vercel_app(client):
+    r = client.options("/chat", headers={
+        "Origin": "https://evil.vercel.app",
+        "Access-Control-Request-Method": "POST",
+    })
+    assert "access-control-allow-origin" not in r.headers

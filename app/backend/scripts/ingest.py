@@ -5,15 +5,14 @@ import hashlib
 import json
 import os
 from pathlib import Path
-from typing import List
 
 from src.core.config import PRIVATE_DATA_DIR
 from src.rag.embedder import get_embedder
-from src.rag.store import HybridStore, STORAGE_DIR
 from src.rag.ingest_pipeline import ingest_paths
+from src.rag.store import STORAGE_DIR, HybridStore
 
 
-def _collect_paths() -> List[str]:
+def _collect_paths() -> list[str]:
     """
     Collect ingestible files from two directories:
 
@@ -52,7 +51,7 @@ def _collect_paths() -> List[str]:
         "Copy of Cognitive-Chair (Final Draft).pdf",  # see docstring: junk ratio + co-author PII
         "Patent PDF.pdf",                              # see docstring: co-applicant home address
     }
-    paths: List[str] = []
+    paths: list[str] = []
 
     private = Path(PRIVATE_DATA_DIR).resolve()
     curated = (private.parent / "curated").resolve()

@@ -1,5 +1,5 @@
 {"id":"q01","question":"What is my email address?","must_include":["rudrajoshi.cs@gmail.com"],"must_cite":true,"expected_source":"Rudra_Joshi_Resume.pdf","expected_snippets":["rudrajoshi.cs@gmail.com"]}
-{"id":"q02","question":"What is my phone number?","must_include":["466988797"],"must_cite":true,"expected_source":"Rudra_Joshi_Resume.pdf","expected_snippets":["+61 466988797"]}
+{"id":"q02","question":"What is my phone number?","must_include":["request"],"must_cite":true,"expected_source":"Rudra_Joshi_Resume.pdf","expected_snippets":["Phone: available on request"]}
 {"id":"q03","question":"Where am I based / located?","must_include":["Sydney"],"must_cite":true,"expected_source":"Rudra_Joshi_Resume.pdf","expected_snippets":["Sydney"]}
 {"id":"q04","question":"What is my educational background?","must_include":["Wollongong"],"must_cite":true,"expected_source":"Rudra_Joshi_Resume.pdf","expected_snippets":["Master of Computer Science"]}
 {"id":"q05","question":"What programming languages do I know?","must_include":["Python"],"must_cite":true,"expected_source":"Rudra_Joshi_Resume.pdf","expected_snippets":["Python, SQL, JavaScript, TypeScript"]}

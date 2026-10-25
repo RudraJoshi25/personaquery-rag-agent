@@ -1,7 +1,8 @@
 from __future__ import annotations
+
 import os
 import re
-from typing import List
+
 from pypdf import PdfReader
 
 # HTML comments in the curated markdown are editorial notes addressed to
@@ -28,7 +29,7 @@ def _strip_html_comments(text: str) -> str:
 # text label, both fused to the value:
 #
 #     "/envel<GLYPH>perudrajoshi.cs@gmail.com"   <- "envelope" + the email
-#     "♂phone+61 466988797"                  <- icon + "phone" + number
+#     "♂phone+61 4XXXXXXXX"                  <- icon + "phone" + number
 #     "/linkedinlinkedin.com/in/rudrajoshi-ai/"   <- label + the URL
 #
 # This is not cosmetic. The tokenizer split the address into
@@ -43,8 +44,8 @@ def _strip_html_comments(text: str) -> str:
 # ---------------------------------------------------------------------------
 # DO NOT simply delete the labels. The first version of this cleanup did, and
 # it made retrieval WORSE (hit-rate 90% -> 85%, and "What is my phone number?"
-# regressed from pass to fail). Reason: the raw text "♂phone+61 466988797"
-# tokenizes to ['phone', '61', '466988797'] — the icon's label was the ONLY
+# regressed from pass to fail). Reason: the raw text "♂phone+61 4XXXXXXXX"
+# tokenizes to ['phone', '61', '4XXXXXXXX'] — the icon's label was the ONLY
 # occurrence of the word "phone" in the chunk, and it was what BM25 matched.
 # Deleting it removed the search term along with the noise.
 #
@@ -52,7 +53,7 @@ def _strip_html_comments(text: str) -> str:
 # fused value AND keeps (indeed strengthens) the searchable term, and reads
 # better in the context window:
 #
-#     "♂phone+61 466988797"              -> "Phone: +61 466988797"
+#     "♂phone+61 4XXXXXXXX"              -> "Phone: +61 4XXXXXXXX"
 #     "/envel<GLYPH>perudrajoshi.cs@..." -> "Email: rudrajoshi.cs@..."
 #     "/linkedinlinkedin.com/in/x"       -> "LinkedIn: linkedin.com/in/x"
 _EMAIL_FIELD_RE = re.compile(
@@ -85,19 +86,22 @@ def _clean_pdf_text(text: str) -> str:
         if ch in "\n\t" or unicodedata.category(ch) not in _GLYPH_CATEGORIES
     )
     text = _EMAIL_FIELD_RE.sub(r" Email: \1", text)
-    text = _PHONE_FIELD_RE.sub(r" Phone: \1", text)
+    # The number itself is never indexed (owner's choice: email only). The
+    # "Phone:" label stays so phone questions still retrieve this chunk and
+    # get an honest "available on request" instead of a co-author's number.
+    text = _PHONE_FIELD_RE.sub(" Phone: available on request ", text)
     text = _LINKEDIN_FIELD_RE.sub(r" LinkedIn: \1", text)
     text = _GITHUB_FIELD_RE.sub(r" GitHub: \1", text)
     text = _BARE_ICON_RE.sub(" ", text)
     return text
 
 from src.rag.chunking import make_chunks
-from src.rag.store import HybridStore, StoredChunk
 from src.rag.embedder import get_embedder
 from src.rag.rerank import precompute_doc_vectors
+from src.rag.store import HybridStore, StoredChunk
 
 
-def read_pdf_pages(path: str) -> List[dict]:
+def read_pdf_pages(path: str) -> list[dict]:
     reader = PdfReader(path)
     pages = []
     for i, page in enumerate(reader.pages):
@@ -106,11 +110,11 @@ def read_pdf_pages(path: str) -> List[dict]:
     return pages
 
 
-def ingest_paths(paths: List[str], store: HybridStore) -> None:
+def ingest_paths(paths: list[str], store: HybridStore) -> None:
     embedder = get_embedder()
 
     max_chunks = int(os.getenv("MAX_CHUNKS", "600"))  # ✅ cap to avoid RAM blowups
-    all_chunks: List[StoredChunk] = []
+    all_chunks: list[StoredChunk] = []
 
     for p in paths:
         file_name = os.path.basename(p)

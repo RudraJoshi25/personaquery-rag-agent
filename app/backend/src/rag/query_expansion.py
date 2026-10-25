@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import os
 import re
-from typing import List
 
 from src.core.logging import log_event
 
@@ -24,10 +23,15 @@ from src.core.logging import log_event
 # reaches the user, so a smaller, faster model is fine here.
 
 
+# Hidden reasoning shares this budget, and it plus the answer's max_tokens
+# must stay under Groq's 1000 output-tokens/min free-tier cap (see llm.py).
+EXPANSION_MAX_TOKENS = 250
+
+
 def _raw_completion(prompt: str) -> str:
     from src.rag.llm import raw_completion
 
-    return raw_completion(prompt, max_tokens=200, temperature=0.4)
+    return raw_completion(prompt, max_tokens=EXPANSION_MAX_TOKENS, temperature=0.4)
 
 N_VARIANTS = int(os.getenv("QUERY_VARIANTS", "3"))
 EXPANSION_ENABLED = os.getenv("QUERY_EXPANSION_ENABLED", "true").lower() in {"1", "true", "yes"}
@@ -60,12 +64,10 @@ def needs_expansion(question: str) -> bool:
     q = (question or "").strip()
     if len(q.split()) <= 4:
         return False
-    if _SIMPLE_RE.search(q):
-        return False
-    return True
+    return not _SIMPLE_RE.search(q)
 
 
-def expand_query(question: str, trace_id: str | None = None) -> List[str]:
+def expand_query(question: str, trace_id: str | None = None) -> list[str]:
     """
     Returns [original, *variants]. The original is always first and always
     kept — a bad rewrite must never be able to displace what the user asked.
@@ -80,7 +82,7 @@ def expand_query(question: str, trace_id: str | None = None) -> List[str]:
         log_event("WARN", "query_expansion_failed", trace_id=trace_id, error=str(exc))
         return [question]
 
-    variants: List[str] = []
+    variants: list[str] = []
     for line in (text or "").splitlines():
         s = line.strip().lstrip("-•*0123456789.) ").strip()
         if not s or len(s) < 5:

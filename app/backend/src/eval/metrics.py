@@ -16,7 +16,7 @@ Kept dependency-free (stdlib only) so the harness stays reproducible.
 from __future__ import annotations
 
 import re
-from typing import Iterable, List, Sequence, Tuple
+from collections.abc import Iterable, Sequence
 
 # Inline citation token produced by the LLM, e.g. [[cite:1,3]]. Also accepts
 # full-width bracket variants (e.g. 【cite:1,3】): some models substitute
@@ -58,7 +58,7 @@ def has_citation(answer: str) -> bool:
     return bool(CITE_RE.search(a) or ANCHOR_RE.search(a))
 
 
-def keyword_match(answer: str, must_include: Sequence[str]) -> Tuple[bool, List[str]]:
+def keyword_match(answer: str, must_include: Sequence[str]) -> tuple[bool, list[str]]:
     """
     Returns (all_present, missing). An empty must_include trivially passes.
     Matching is on alphanumeric content only (see _squash) so it can't be
@@ -73,7 +73,7 @@ def _found_snippets(
     retrieved_texts: Iterable[str],
     expected_snippets: Sequence[str],
     k: int,
-) -> List[bool]:
+) -> list[bool]:
     """For each expected snippet, whether it appears in any of the top-k chunks."""
     # "|" (non-alphanumeric, stripped out of every squashed snippet) keeps
     # chunks from silently fusing at their boundaries — without it, a snippet

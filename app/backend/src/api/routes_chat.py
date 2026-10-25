@@ -4,8 +4,8 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, field_validator
 
-from src.core.config import MAX_QUESTION_CHARS
 from src.api.rate_limit import rate_limit_dep
+from src.core.config import MAX_QUESTION_CHARS
 from src.rag.rag import run_rag
 
 router = APIRouter()
@@ -17,8 +17,7 @@ class ChatRequest(BaseModel):
     @field_validator("question")
     @classmethod
     def _validate_question(cls, v: str) -> str:
-        if not isinstance(v, str):
-            raise ValueError("question must be a string")
+        # Type is already enforced by the `str` annotation (422 on mismatch).
         v = v.strip()
         if not v:
             raise ValueError("question must not be empty")

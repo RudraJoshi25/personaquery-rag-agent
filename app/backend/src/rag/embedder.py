@@ -1,7 +1,7 @@
 from __future__ import annotations
+
 import os
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 DEFAULT_EMBED_MODEL = os.getenv("EMBED_MODEL", "all-MiniLM-L6-v2")
 
@@ -30,7 +30,7 @@ class Embedder:
         # Probe once rather than trusting a hardcoded table.
         self.dim = len(next(iter(self._fe.embed(["dimension probe"]))))
 
-    def embed(self, texts: List[str]) -> List[List[float]]:
+    def embed(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
 
@@ -45,7 +45,7 @@ class Embedder:
         # on a 120-chunk corpus that was a ~908MB allocation and ingestion
         # died with "Failed to allocate memory".
         batch = int(os.getenv("EMBED_BATCH", "16"))
-        out: List[List[float]] = []
+        out: list[list[float]] = []
         for i in range(0, len(cleaned), batch):
             part = cleaned[i : i + batch]
             vecs = np.array(
@@ -57,11 +57,11 @@ class Embedder:
             out.extend((vecs / norms).tolist())
         return out
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         return self.embed([text])[0]
 
 
-_singleton: Optional[Embedder] = None
+_singleton: Embedder | None = None
 
 
 def get_embedder() -> Embedder:

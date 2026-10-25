@@ -9,9 +9,9 @@ compensate.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Dict, Any, List, Optional, Tuple
 import re
+from dataclasses import dataclass
+from typing import Any
 
 from src.rag.doc_profiles import ChunkProfile, profile_for
 
@@ -47,15 +47,15 @@ def clean_text(t: str) -> str:
 @dataclass
 class Chunk:
     text: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
-def _split_into_sections(text: str) -> List[Tuple[str, str]]:
+def _split_into_sections(text: str) -> list[tuple[str, str]]:
     """Returns [(section_title, section_text)]; one 'Document' if no headings."""
     lines = text.split("\n")
-    sections: List[Tuple[str, List[str]]] = []
+    sections: list[tuple[str, list[str]]] = []
     cur_title = "Document"
-    cur_buf: List[str] = []
+    cur_buf: list[str] = []
 
     for line in lines:
         if is_heading(line):
@@ -69,7 +69,7 @@ def _split_into_sections(text: str) -> List[Tuple[str, str]]:
     if cur_buf:
         sections.append((cur_title, cur_buf))
 
-    out: List[Tuple[str, str]] = []
+    out: list[tuple[str, str]] = []
     for title, buf in sections:
         body = clean_text("\n".join(buf))
         if body:
@@ -77,15 +77,15 @@ def _split_into_sections(text: str) -> List[Tuple[str, str]]:
     return out or [("Document", clean_text(text))]
 
 
-def _atomic_groups(text: str, prof: ChunkProfile) -> List[str]:
+def _atomic_groups(text: str, prof: ChunkProfile) -> list[str]:
     """
     Group consecutive bullets / 'Label: value' lines into chunks, never letting
     a group exceed max_words. Keeps each resume bullet and each transcript row
     independently retrievable instead of melting them into a 220-word blob.
     """
     lines = [ln for ln in text.split("\n") if ln.strip()]
-    groups: List[str] = []
-    buf: List[str] = []
+    groups: list[str] = []
+    buf: list[str] = []
     buf_words = 0
 
     def flush():
@@ -113,11 +113,11 @@ def _atomic_groups(text: str, prof: ChunkProfile) -> List[str]:
     return groups
 
 
-def _chunk_by_words(text: str, max_words: int, overlap_words: int) -> List[str]:
+def _chunk_by_words(text: str, max_words: int, overlap_words: int) -> list[str]:
     words = text.split()
     if not words:
         return []
-    chunks: List[str] = []
+    chunks: list[str] = []
     i = 0
     while i < len(words):
         j = min(i + max_words, len(words))
@@ -131,16 +131,16 @@ def _chunk_by_words(text: str, max_words: int, overlap_words: int) -> List[str]:
 def make_chunks(
     text: str,
     file_name: str,
-    page_label: Optional[str],
-    doc_id: Optional[str] = None,
-    profile_override: Optional[str] = None,
-) -> List[Chunk]:
+    page_label: str | None,
+    doc_id: str | None = None,
+    profile_override: str | None = None,
+) -> list[Chunk]:
     text = clean_text(text)
     if not text:
         return []
 
     prof = profile_for(file_name, profile_override)
-    out: List[Chunk] = []
+    out: list[Chunk] = []
 
     for section_title, section_text in _split_into_sections(text):
         if prof.prefer_atomic_lines:

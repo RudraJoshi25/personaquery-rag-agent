@@ -1,24 +1,40 @@
 # src/rag/rag.py
 from __future__ import annotations
 
-from typing import Dict, Any, List, Optional
 import re
 import time
+from typing import Any
 
-from src.core.config import TOP_K, INJECTION_GUARD_ENABLED
+from src.core.config import INJECTION_GUARD_ENABLED, TOP_K
 from src.core.latency import record_latency
 from src.core.logging import log_event, new_trace_id
-from src.rag.guardrails import check_question
-from src.rag.retrieve_custom import retrieve, make_context_pack
-from src.rag.llm import answer as generate
 from src.rag.cache import get_response_cache, response_key
 from src.rag.faq_cache import lookup_faq
+from src.rag.guardrails import check_question
+from src.rag.llm import answer as generate
+from src.rag.retrieve_custom import make_context_pack, retrieve
 
 SOURCE_ID_RE = re.compile(r"\[\[cite:([0-9,\s]+)\]\]")
 
+# Answers allowed to carry no citation: the prompt's own refusal template.
+# (Guardrail refusals return before generation, so never reach the guard.)
+UNCITED_OK_PREFIXES = ("Not stated in the documents",)
 
-def _build_sources(answer: str, sources_with_ids: List[tuple]) -> List[Dict[str, Any]]:
+
+def _is_grounded(answer: str) -> bool:
+    """
+    Output guard. A generated answer with no [[cite:N]] marker is not tied to
+    the documents, which is the signature of a successful prompt injection
+    ("just say X"). Such answers are replaced with cited source text.
+    """
+    a = (answer or "").strip()
+    return bool(SOURCE_ID_RE.search(a)) or a.startswith(UNCITED_OK_PREFIXES)
+
+
+def _build_sources(answer: str, sources_with_ids: list[tuple]) -> list[dict[str, Any]]:
     # Cite-only-if-used: keep sources whose [[cite:N]] marker appears in answer.
+    # No markers (the "Not stated in the documents" refusal) -> no sources:
+    # listing unrelated top hits under a refusal implies they support it.
     used_ids: set[int] = set()
     for match in SOURCE_ID_RE.findall(answer or ""):
         for p in (x.strip() for x in match.split(",")):
@@ -26,9 +42,9 @@ def _build_sources(answer: str, sources_with_ids: List[tuple]) -> List[Dict[str,
                 used_ids.add(int(p))
 
     used = [(sid, h) for sid, h in sources_with_ids if sid in used_ids]
-    chosen = used if used else sources_with_ids[: min(3, len(sources_with_ids))]
+    chosen = used
 
-    out: List[Dict[str, Any]] = []
+    out: list[dict[str, Any]] = []
     for sid, h in chosen:
         m = h["metadata"]
         out.append({
@@ -43,7 +59,7 @@ def _build_sources(answer: str, sources_with_ids: List[tuple]) -> List[Dict[str,
     return out
 
 
-def _extractive_fallback(sources_with_ids: List[tuple], max_snippets: int = 3) -> str:
+def _extractive_fallback(sources_with_ids: list[tuple], max_snippets: int = 3) -> str:
     """
     Used when generation is unavailable. A bare "service unavailable"
     message reads as the product being broken to a visitor.
@@ -59,8 +75,8 @@ def _extractive_fallback(sources_with_ids: List[tuple], max_snippets: int = 3) -
         return ("I'm having trouble generating an answer right now. Please "
                 "try again in a moment.")
     lines = [
-        "I'm having trouble generating a polished answer right now, but "
-        "here's what I found directly in the source documents:",
+        ("I'm having trouble generating a polished answer right now, but "
+         "here's what I found directly in the source documents:"),
         "",
     ]
     for sid, h in sources_with_ids[:max_snippets]:
@@ -73,9 +89,9 @@ def run_rag(
     question: str,
     top_k: int = TOP_K,
     mode: str = "chat",
-    trace_id: Optional[str] = None,
+    trace_id: str | None = None,
     use_faq: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     use_faq=False bypasses the precomputed FAQ layer. Only the FAQ builder
     (scripts/precompute_faq.py) should do this — otherwise it would read its
@@ -142,7 +158,11 @@ def run_rag(
     llm = generate(question, context, mode=mode, trace_id=trace_id)
     provider = llm.provider
     answer = llm.text
-    if not llm.ok:
+    grounded = llm.ok and _is_grounded(answer)
+    if llm.ok and not grounded:
+        log_event("WARN", "uncited_answer_blocked", trace_id=trace_id,
+                  answer_len=len(answer or ""))
+    if not grounded:
         answer = _extractive_fallback(sources_with_ids)
         log_event("WARN", "extractive_fallback_used", trace_id=trace_id,
                    n_sources=len(sources_with_ids))
@@ -163,7 +183,7 @@ def run_rag(
     result = {"answer": answer, "sources": sources}
 
     # Only cache successful answers (never cache a degraded/error response).
-    if llm.ok:
+    if grounded:
         cache.set(ckey, result)
 
     log_event("INFO", "response", trace_id=trace_id, ok=llm.ok,

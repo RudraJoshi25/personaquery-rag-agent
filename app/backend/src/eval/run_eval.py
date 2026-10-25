@@ -21,18 +21,18 @@ import os
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from src.core.config import RAG_STORAGE_DIR as STORAGE_DIR
-from src.rag.rag import run_rag
-from src.rag.retrieve_custom import retrieve
 from src.eval.metrics import (
     has_citation,
-    keyword_match,
     hit_rate_at_k,
-    recall_at_k,
+    keyword_match,
     precision_at_k,
+    recall_at_k,
 )
+from src.rag.rag import run_rag
+from src.rag.retrieve_custom import retrieve
 
 QA_PATH = Path(__file__).resolve().parent / "qa.jsonl"
 RESULTS_DIR = Path(__file__).resolve().parent / "results"
@@ -53,12 +53,12 @@ EVAL_PACE_S = float(os.getenv("EVAL_PACE_S", "3.0"))
 EVAL_USE_FAQ = os.getenv("EVAL_USE_FAQ", "false").lower() in {"1", "true", "yes"}
 
 
-def _load_qa() -> List[Dict[str, Any]]:
-    items: List[Dict[str, Any]] = []
+def _load_qa() -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
     with open(QA_PATH, "r", encoding="utf-8") as f:
         for line in f:
             s = line.strip()
-            if not s or s.startswith("#") or s.startswith("..."):
+            if not s or s.startswith(("#", "...")):
                 continue
             try:
                 items.append(json.loads(s))
@@ -98,10 +98,10 @@ def _warn_if_index_stale() -> None:
         )
 
 
-def run() -> Dict[str, Any]:
+def run() -> dict[str, Any]:
     _warn_if_index_stale()
     qa = _load_qa()
-    per_item: List[Dict[str, Any]] = []
+    per_item: list[dict[str, Any]] = []
 
     n = len(qa)
     retr_hits = 0

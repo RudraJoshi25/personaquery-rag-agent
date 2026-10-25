@@ -37,23 +37,23 @@ import hashlib
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
+from src.core.config import RAG_STORAGE_DIR as STORAGE_DIR
 from src.core.logging import log_event
 
-from src.core.config import RAG_STORAGE_DIR as STORAGE_DIR
 FAQ_PATH = Path(STORAGE_DIR) / "faq_cache.json"
 CHUNKS_PATH = Path(STORAGE_DIR) / "chunks.jsonl"
 
 FAQ_ENABLED = os.getenv("FAQ_CACHE_ENABLED", "true").lower() in {"1", "true", "yes"}
 FAQ_MIN_SIMILARITY = float(os.getenv("FAQ_MIN_SIMILARITY", "0.86"))
 
-_cache: Optional[Dict[str, Any]] = None
+_cache: dict[str, Any] | None = None
 
 
-def index_sha(path: Optional[Path] = None) -> str:
+def index_sha(path: Path | None = None) -> str:
     path = path or CHUNKS_PATH
     # LF-normalised so a CRLF checkout (git on Windows) hashes the same as Linux.
     if not path.exists():
@@ -63,7 +63,7 @@ def index_sha(path: Optional[Path] = None) -> str:
 _loaded = False
 
 
-def _load() -> Optional[Dict[str, Any]]:
+def _load() -> dict[str, Any] | None:
     global _cache, _loaded
     if _loaded:
         return _cache
@@ -95,7 +95,7 @@ def _load() -> Optional[Dict[str, Any]]:
     return _cache
 
 
-def lookup_faq(question: str, trace_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+def lookup_faq(question: str, trace_id: str | None = None) -> dict[str, Any] | None:
     """Returns the cached {answer, sources} for a semantically-equivalent
     question, or None to fall through to the live pipeline."""
     data = _load()

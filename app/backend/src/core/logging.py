@@ -13,10 +13,11 @@ import json
 import os
 import sys
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from src.core.config import LOG_DIR
+
 APP_LOG = LOG_DIR / "app.jsonl"
 
 _LEVELS = {"DEBUG": 10, "INFO": 20, "WARN": 30, "WARNING": 30, "ERROR": 40}
@@ -31,7 +32,7 @@ def log_event(level: str, event: str, *, trace_id: str | None = None, **fields: 
     """Emit one structured log record. Returns the record (handy for tests)."""
     level = level.upper()
     rec: dict[str, Any] = {
-        "ts": datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
+        "ts": datetime.now(UTC).isoformat(timespec="milliseconds"),
         "level": level,
         "event": event,
     }

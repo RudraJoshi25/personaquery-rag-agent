@@ -14,16 +14,17 @@ import json
 import os
 import statistics
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 from src.core.config import LOG_DIR
+
 LATENCY_LOG = LOG_DIR / "latency.jsonl"
 LATENCY_SUMMARY = LOG_DIR / "latency_summary.json"
 
 _ENABLED = os.getenv("RAG_LATENCY_LOG", "1").lower() in {"1", "true", "yes"}
 
 
-def _percentile(values: List[float], pct: float) -> float:
+def _percentile(values: list[float], pct: float) -> float:
     """Nearest-rank percentile on a non-empty list."""
     s = sorted(values)
     idx = min(int(pct * len(s)), len(s) - 1)
@@ -42,7 +43,7 @@ def record_latency(
         return
     try:
         LOG_DIR.mkdir(parents=True, exist_ok=True)
-        rec: Dict[str, Any] = {
+        rec: dict[str, Any] = {
             "ts": datetime.now().isoformat(timespec="seconds"),
             "total_s": round(total_s, 4),
             "retrieve_s": round(retrieve_s, 4) if retrieve_s is not None else None,
@@ -58,7 +59,7 @@ def record_latency(
         pass
 
 
-def _refresh_summary() -> Dict[str, Any]:
+def _refresh_summary() -> dict[str, Any]:
     totals = [r["total_s"] for r in _read_log() if r.get("total_s") is not None]
     if not totals:
         return {}
@@ -76,10 +77,10 @@ def _refresh_summary() -> Dict[str, Any]:
     return summary
 
 
-def _read_log() -> List[Dict[str, Any]]:
+def _read_log() -> list[dict[str, Any]]:
     if not LATENCY_LOG.exists():
         return []
-    out: List[Dict[str, Any]] = []
+    out: list[dict[str, Any]] = []
     with open(LATENCY_LOG, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -92,7 +93,7 @@ def _read_log() -> List[Dict[str, Any]]:
     return out
 
 
-def get_summary() -> Dict[str, Any]:
+def get_summary() -> dict[str, Any]:
     """Return the current rolling latency summary (recomputed from the log)."""
     return _refresh_summary()
 

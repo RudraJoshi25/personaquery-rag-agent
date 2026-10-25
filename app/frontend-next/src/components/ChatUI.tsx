@@ -31,6 +31,9 @@ function buildApiUrl(path: string) {
   return base.replace(/\/+$/, "") + path;
 }
 
+// Must match the backend's MAX_QUESTION_CHARS (src/core/config.py).
+const MAX_QUESTION_CHARS = 300;
+
 export default function ChatUI() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -341,9 +344,21 @@ export default function ChatUI() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
+            maxLength={MAX_QUESTION_CHARS}
+            aria-describedby="question-char-count"
             placeholder="Type your question..."
             className="w-full bg-transparent text-sm text-white/90 outline-none placeholder:text-white/45"
           />
+          <span
+            id="question-char-count"
+            aria-live="polite"
+            className={[
+              "shrink-0 text-xs tabular-nums",
+              input.length >= MAX_QUESTION_CHARS * 0.9 ? "text-amber-300" : "text-white/45",
+            ].join(" ")}
+          >
+            {input.length}/{MAX_QUESTION_CHARS}
+          </span>
 
           <button
             type="button"

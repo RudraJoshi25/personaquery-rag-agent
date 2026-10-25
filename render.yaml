@@ -58,7 +58,7 @@ services:
       - key: INJECTION_GUARD_ENABLED
         value: "true"
       - key: MAX_QUESTION_CHARS
-        value: "2000"
+        value: "300"
       - key: RATE_LIMIT_REQUESTS
         value: "20"
       - key: RATE_LIMIT_WINDOW_S
@@ -68,7 +68,7 @@ services:
         value: "true"
 
       # --- CORS: portfolio + PersonaQuery frontends ---
-      # Regex covers localhost dev and any *.vercel.app preview deploy.
-      # Add your custom domain here when the portfolio gets one.
-      - key: CORS_ALLOW_ORIGIN_REGEX
-        value: ^https?://(localhost|127\.0\.0\.1)(:\d+)?$|^https://.*\.vercel\.app$
+      # Exact frontend origin (e.g. https://personaquery.vercel.app), set in
+      # the dashboard. Extra origins: comma-separated CORS_ALLOW_ORIGINS.
+      - key: FRONTEND_ORIGIN
+        sync: false

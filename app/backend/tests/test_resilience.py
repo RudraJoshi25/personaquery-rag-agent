@@ -123,3 +123,62 @@ def test_circuit_opens_after_repeated_failure(monkeypatch):
     res = llm.answer("q", "ctx")
     assert res.status == "circuit_open"
     assert calls["n"] == before, "open circuit must not issue a request"
+
+
+def test_daily_quota_hard_stop(monkeypatch):
+    """At the daily limit: no provider call, clean degraded result, breaker untouched."""
+    calls = _patch_post(monkeypatch, [FakeResp(200, _ok_body())])
+    monkeypatch.setattr(llm, "_day", llm.datetime.now(llm.UTC).date().isoformat())
+    monkeypatch.setattr(llm, "_day_calls", llm.DAILY_CALL_LIMIT)
+    res = llm.answer("q", "ctx")
+    assert res.ok is False and res.status == "quota_exhausted"
+    assert calls["n"] == 0
+    assert llm._get_breaker().allow()
+
+
+def test_daily_quota_resets_at_utc_midnight(monkeypatch):
+    _patch_post(monkeypatch, [FakeResp(200, _ok_body())])
+    monkeypatch.setattr(llm, "_day", "2000-01-01")
+    monkeypatch.setattr(llm, "_day_calls", llm.DAILY_CALL_LIMIT)
+    assert llm.answer("q", "ctx").ok is True
+    assert llm.calls_today() == 1
+
+
+def test_expansion_skipped_above_soft_limit(monkeypatch):
+    from src.rag import query_expansion
+    calls = _patch_post(monkeypatch, [FakeResp(200, _ok_body("a\nb\nc"))])
+    monkeypatch.setattr(llm, "_day", llm.datetime.now(llm.UTC).date().isoformat())
+    monkeypatch.setattr(llm, "_day_calls", llm.EXPANSION_CALL_LIMIT + 1)
+    q = "which machine learning projects has rudra shipped to production"
+    assert query_expansion.expand_query(q) == [q]
+    assert calls["n"] == 0
+
+
+def test_groq_daily_429_is_quota_not_breaker_failure(monkeypatch):
+    """Groq's per-day 429: no retry, no breaker strike, rest of day short-circuits."""
+    body = {"error": {"message": "Rate limit reached for model `qwen/qwen3.8-27b` on "
+                      "requests per day (RPD): Limit 1000, Used 1000", "code": "rate_limit_exceeded"}}
+    calls = _patch_post(monkeypatch, [FakeResp(429, body)])
+    monkeypatch.setattr(llm, "_day", llm.datetime.now(llm.UTC).date().isoformat())
+    monkeypatch.setattr(llm, "_day_calls", 0)
+    res = llm.answer("q", "ctx")
+    assert res.ok is False and res.status == "quota_exhausted"
+    assert calls["n"] == 1                      # not retried
+    assert llm._get_breaker().status()["fails"] == 0
+    assert llm.answer("q", "ctx").status == "quota_exhausted"
+    assert calls["n"] == 1                      # second call never reached Groq
+
+
+def test_groq_request_too_large_not_retried(monkeypatch):
+    """OTPM 'Request too large' can never succeed: fail once, no retries."""
+    body = {"error": {"message": "Request too large for model `qwen/qwen3.8-27b` on output "
+                      "tokens per minute (OTPM): Limit 1000, Requested 1024."}}
+    calls = _patch_post(monkeypatch, [FakeResp(429, body)])
+    res = llm.answer("q", "ctx")
+    assert res.ok is False and res.status == "request_too_large"
+    assert calls["n"] == 1
+
+
+def test_default_budget_fits_free_tier_otpm():
+    from src.rag.query_expansion import EXPANSION_MAX_TOKENS
+    assert llm.GROQ_MAX_TOKENS + EXPANSION_MAX_TOKENS <= 1000

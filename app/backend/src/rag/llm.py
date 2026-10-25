@@ -14,8 +14,9 @@ from __future__ import annotations
 
 import os
 import re
+import threading
 from dataclasses import dataclass
-from typing import Optional
+from datetime import UTC, datetime
 
 import requests
 
@@ -38,9 +39,18 @@ GROQ_URL = os.getenv("GROQ_URL", "https://api.groq.com/openai/v1/chat/completion
 # per model, and a single id keeps config minimal.
 GROQ_CHAT_MODEL = os.getenv("GROQ_CHAT_MODEL", "qwen/qwen3.8-27b")
 GROQ_EXPANSION_MODEL = os.getenv("GROQ_EXPANSION_MODEL", GROQ_CHAT_MODEL)
-GROQ_MAX_TOKENS = int(os.getenv("GROQ_MAX_TOKENS", "1024"))
+# Free tier caps OUTPUT tokens at 1000/min per org (OTPM), reasoning
+# included, and rejects any request whose max_tokens alone exceeds it
+# ("Request too large"). 700 here + 250 for expansion keeps one full
+# question under the cap.
+GROQ_MAX_TOKENS = int(os.getenv("GROQ_MAX_TOKENS", "700"))
 # Low temperature: grounded answers should not vary between runs.
 GROQ_TEMPERATURE = float(os.getenv("GROQ_TEMPERATURE", "0.2"))
+
+# Qwen3.8 always reasons first, and reasoning tokens count against
+# max_tokens: at the default effort a 200-token expansion call spent 198 on
+# reasoning and returned empty content. Groq rejects "none"; "low" is the floor.
+GROQ_REASONING_EFFORT = os.getenv("GROQ_REASONING_EFFORT", "low")
 
 # Qwen3 may emit a <think>...</think> block before the answer; never show it.
 _THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
@@ -48,14 +58,43 @@ _THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
 # Number of times the API was actually invoked.
 CALL_COUNT = 0
 
-_breaker: Optional[CircuitBreaker] = None
+# Global daily budget, shared by every visitor: the Groq free tier caps the
+# whole org at 1K req/day, so one abuser could otherwise starve everyone.
+# ponytail: in-process, resets on restart and per replica; move to Redis if
+# the service ever runs more than one instance.
+DAILY_CALL_LIMIT = int(os.getenv("LLM_DAILY_CALL_LIMIT", "800"))
+EXPANSION_CALL_LIMIT = int(os.getenv("LLM_EXPANSION_CALL_LIMIT", "600"))
+_day = ""
+_day_calls = 0
+_day_lock = threading.Lock()
+
+
+def calls_today() -> int:
+    global _day, _day_calls
+    today = datetime.now(UTC).date().isoformat()
+    with _day_lock:
+        if today != _day:
+            _day, _day_calls = today, 0
+        return _day_calls
+
+
+def _take_call() -> None:
+    """Reserve one call from today's budget, or raise (not retryable)."""
+    global _day_calls
+    calls_today()  # roll the day over if needed
+    with _day_lock:
+        if _day_calls >= DAILY_CALL_LIMIT:
+            raise LLMError("daily quota exhausted", code="quota_exhausted")
+        _day_calls += 1
+
+_breaker: CircuitBreaker | None = None
 
 
 @dataclass
 class LLMResult:
     text: str
     ok: bool
-    status: str          # "ok" | "rate_limited" | "timeout" | "server_error" | "circuit_open" | "error" | "misconfig"
+    status: str          # "ok" | "rate_limited" | "timeout" | "server_error" | "circuit_open" | "quota_exhausted" | "error" | "misconfig"
     attempts: int = 0
     provider: str = "groq"
 
@@ -78,7 +117,8 @@ def _extract_text(data: dict) -> str:
 
 
 def _post(payload: dict, timeout: float) -> str:
-    global CALL_COUNT
+    global CALL_COUNT, _day_calls
+    _take_call()
     CALL_COUNT += 1
     try:
         r = requests.post(
@@ -101,6 +141,21 @@ def _post(payload: dict, timeout: float) -> str:
         return text
 
     if r.status_code == 429:
+        body = (r.text or "").lower()
+        # "Request too large": this request can never fit the per-minute cap,
+        # so retrying only burns time. A config error, not load.
+        if "request too large" in body:
+            log_event("ERROR", "llm_request_too_large", detail=(r.text or "")[:200])
+            raise LLMError("request exceeds per-minute token cap", code="request_too_large")
+        # Groq says which window was hit: "...on requests per day (RPD)" or
+        # "tokens per day (TPD)". A daily cap won't clear on retry, and it is
+        # not a provider fault, so treat it like our own budget running out
+        # and stop calling for the rest of the UTC day.
+        if "per day" in body:
+            with _day_lock:
+                _day_calls = max(_day_calls, DAILY_CALL_LIMIT)
+            log_event("WARN", "llm_provider_daily_quota", detail=(r.text or "")[:200])
+            raise LLMError("provider daily quota exhausted", code="quota_exhausted")
         ra = r.headers.get("retry-after")
         try:
             retry_after = float(ra) if ra else None
@@ -124,6 +179,7 @@ def _build_payload(question: str, context: str, mode: str) -> dict:
         "model": GROQ_CHAT_MODEL,
         "max_tokens": GROQ_MAX_TOKENS,
         "temperature": GROQ_TEMPERATURE,
+        "reasoning_effort": GROQ_REASONING_EFFORT,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": build_user_prompt(question, context, mode)},
@@ -132,7 +188,7 @@ def _build_payload(question: str, context: str, mode: str) -> dict:
 
 
 def answer(question: str, context: str, mode: str = "chat",
-           trace_id: Optional[str] = None) -> LLMResult:
+           trace_id: str | None = None) -> LLMResult:
     """
     Resilient grounded-answer call. Never raises and never leaks a stack
     trace or provider body to the caller — always returns a clean LLMResult.
@@ -140,6 +196,10 @@ def answer(question: str, context: str, mode: str = "chat",
     if not GROQ_API_KEY:
         log_event("ERROR", "llm_misconfig", trace_id=trace_id, reason="missing GROQ_API_KEY")
         return LLMResult("Server misconfiguration: GROQ_API_KEY is missing.", False, "misconfig")
+
+    if calls_today() >= DAILY_CALL_LIMIT:
+        log_event("WARN", "llm_quota_exhausted", trace_id=trace_id, limit=DAILY_CALL_LIMIT)
+        return LLMResult(DEGRADED_MESSAGE, False, "quota_exhausted")
 
     breaker = _get_breaker()
     if not breaker.allow():
@@ -172,13 +232,15 @@ def answer(question: str, context: str, mode: str = "chat",
         log_event("INFO", "llm_ok", trace_id=trace_id, attempts=calls["n"])
         return LLMResult(text, True, "ok", calls["n"])
     except LLMError as e:
-        breaker.record_failure()
+        # Our own budget running out is not a provider failure.
+        if e.code != "quota_exhausted":
+            breaker.record_failure()
         log_event("ERROR", "llm_failed", trace_id=trace_id,
                   error_code=e.code, attempts=calls["n"], breaker=breaker.status())
         return LLMResult(DEGRADED_MESSAGE, False, e.code, calls["n"])
 
 
-def raw_completion(prompt: str, model: Optional[str] = None,
+def raw_completion(prompt: str, model: str | None = None,
                    max_tokens: int = 256, temperature: float = 0.3,
                    timeout: float = 8.0) -> str:
     """
@@ -188,9 +250,13 @@ def raw_completion(prompt: str, model: Optional[str] = None,
     """
     if not GROQ_API_KEY:
         raise LLMError("misconfig")
+    # Above the soft limit, save what is left of the budget for answers.
+    if calls_today() > EXPANSION_CALL_LIMIT:
+        raise LLMError("expansion budget exhausted", code="quota_soft")
     return _post({
         "model": model or GROQ_EXPANSION_MODEL,
         "max_tokens": max_tokens,
         "temperature": temperature,
+        "reasoning_effort": GROQ_REASONING_EFFORT,
         "messages": [{"role": "user", "content": prompt}],
     }, timeout)

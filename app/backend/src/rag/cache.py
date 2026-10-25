@@ -15,7 +15,8 @@ import os
 import threading
 import time
 from collections import OrderedDict
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
+from typing import Any
 
 
 def _key(*parts: Any) -> str:
@@ -32,12 +33,12 @@ class TTLCache:
     def __init__(self, maxsize: int = 256, ttl_s: float = 0.0):
         self.maxsize = maxsize
         self.ttl_s = ttl_s
-        self._data: "OrderedDict[str, Tuple[float, Any]]" = OrderedDict()
+        self._data: OrderedDict[str, tuple[float, Any]] = OrderedDict()
         self._lock = threading.Lock()
         self.hits = 0
         self.misses = 0
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         with self._lock:
             item = self._data.get(key)
             if item is None:
@@ -60,7 +61,7 @@ class TTLCache:
             while len(self._data) > self.maxsize:
                 self._data.popitem(last=False)
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         with self._lock:
             total = self.hits + self.misses
             return {
@@ -96,7 +97,7 @@ def get_response_cache() -> TTLCache:
     return _response_cache
 
 
-def cached_embed(text: str, embed_fn: Callable[[str], List[float]]) -> Tuple[List[float], bool]:
+def cached_embed(text: str, embed_fn: Callable[[str], list[float]]) -> tuple[list[float], bool]:
     """Return (embedding, was_cache_hit). embed_fn(text) computes on miss."""
     k = _key("emb", text)
     hit = _embedding_cache.get(k)

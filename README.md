@@ -75,6 +75,16 @@ fails if retrieval hit-rate@8 drops below 90%. Current: **94.4% (17/18)**.
 The research paper and patent PDFs are deliberately not ingested (co-author
 PII, reference-list noise); `data/curated/projects.md` summarises both.
 
+### Known limitations
+
+- **q10 ("Summarize my professional profile.") fails retrieval, by choice.**
+  It expects the resume's summary line ("seeking a first commercial AI/ML or
+  software engineering role"), but "profile" matches the curated
+  `linkedin-profile.md`, `education.md` and `projects.md` chunks more
+  strongly, so no resume chunk makes the top 8. The question is vague rather
+  than retrieval being broken; the answer is still grounded in the curated
+  docs. Left failing rather than tuning the golden set to pass.
+
 ---
 
 ## Scope & Limitations

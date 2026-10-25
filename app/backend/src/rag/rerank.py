@@ -22,7 +22,7 @@ when the candidate set is already narrowed to a few dozen chunks.
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from src.core.logging import log_event
 
@@ -65,7 +65,7 @@ def _maxsim(q_vecs, d_vecs) -> float:
 COLBERT_INGEST_BATCH_SIZE = int(os.getenv("COLBERT_INGEST_BATCH_SIZE", "8"))
 
 
-def precompute_doc_vectors(texts: List[str]):
+def precompute_doc_vectors(texts: list[str]):
     """
     Encode every chunk's ColBERT token vectors ONCE, at ingest time.
 
@@ -94,7 +94,7 @@ def precompute_doc_vectors(texts: List[str]):
     import numpy as np
 
     try:
-        out: List[np.ndarray] = []
+        out: list[np.ndarray] = []
         for i in range(0, len(texts), COLBERT_INGEST_BATCH_SIZE):
             batch = texts[i : i + COLBERT_INGEST_BATCH_SIZE]
             out.extend(np.array(v, dtype="float32") for v in model.embed(batch, batch_size=len(batch)))
@@ -107,10 +107,10 @@ def precompute_doc_vectors(texts: List[str]):
 
 def colbert_rerank(
     question: str,
-    hits: List[Dict[str, Any]],
+    hits: list[dict[str, Any]],
     top_k: int,
-    trace_id: Optional[str] = None,
-) -> List[Dict[str, Any]]:
+    trace_id: str | None = None,
+) -> list[dict[str, Any]]:
     model = _get_colbert()
     if model is None or not hits:
         return hits[:top_k]
@@ -118,7 +118,7 @@ def colbert_rerank(
     try:
         import numpy as np
 
-        q_vecs = np.array(list(model.query_embed([question]))[0], dtype="float32")
+        q_vecs = np.array(next(iter(model.query_embed([question]))), dtype="float32")
 
         # Steady state: every hit already carries its vector from the ingest-time
         # cache (see precompute_doc_vectors / store.colbert_vectors). Only hits
@@ -131,7 +131,7 @@ def colbert_rerank(
                 hits[i] = {**hits[i], "colbert_vec": np.array(fresh[pos], dtype="float32")}
             log_event("INFO", "colbert_cache_miss", trace_id=trace_id, n=len(need_encode))
 
-        scored: List[Tuple[float, Dict[str, Any]]] = []
+        scored: list[tuple[float, dict[str, Any]]] = []
         for h in hits:
             score = _maxsim(q_vecs, h["colbert_vec"])
             scored.append((score, {**h, "colbert_score": score}))
@@ -147,10 +147,10 @@ def colbert_rerank(
 
 def rerank(
     question: str,
-    hits: List[Dict[str, Any]],
+    hits: list[dict[str, Any]],
     top_k: int,
-    trace_id: Optional[str] = None,
-) -> List[Dict[str, Any]]:
+    trace_id: str | None = None,
+) -> list[dict[str, Any]]:
     if not RERANK_ENABLED or not hits:
         return hits[:top_k]
 

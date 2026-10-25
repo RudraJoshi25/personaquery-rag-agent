@@ -17,8 +17,8 @@ import os
 import sys
 from pathlib import Path
 
-from src.rag.retrieve_custom import retrieve
 from src.eval.metrics import hit_rate_at_k
+from src.rag.retrieve_custom import retrieve
 
 QA_PATH = Path(__file__).resolve().parent / "qa.jsonl"
 K = int(os.getenv("EVAL_TOP_K", "8"))
