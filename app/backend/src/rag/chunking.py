@@ -173,11 +173,3 @@ def make_chunks(
 
     return out
 
-
-def chunk_text(text: str, file_name: str, page_num: int) -> List[Chunk]:
-    """Backwards-compatible wrapper used by older ingestion paths."""
-    return make_chunks(text, file_name=file_name, page_label=str(page_num), doc_id=file_name)
-
-
-def chunk_text_for_file(text: str, file_name: str, page_num: int) -> List[Chunk]:
-    return chunk_text(text, file_name=file_name, page_num=page_num)

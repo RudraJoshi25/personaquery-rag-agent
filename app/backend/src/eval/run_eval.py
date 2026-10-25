@@ -38,13 +38,8 @@ QA_PATH = Path(__file__).resolve().parent / "qa.jsonl"
 RESULTS_DIR = Path(__file__).resolve().parent / "results"
 TOP_K = int(os.getenv("EVAL_TOP_K", "8"))
 
-# openai/gpt-oss-120b's free tier caps at 8K tokens/minute (see Groq's rate
-# limits page). Each question costs a system prompt + up to an 8-chunk
-# context pack (~3K+ tokens), sometimes doubled by query expansion's own
-# Groq call — firing 20 of these back-to-back exhausts the budget within a
-# few questions and the rest fail after burning through all retries. A real
-# chat user naturally paces requests by reading/typing; this script doesn't,
-# so it has to pace itself instead.
+# Pace calls so 20 back-to-back questions (each ~3K tokens, sometimes doubled
+# by query expansion) don't trip the provider's rate limit.
 EVAL_PACE_S = float(os.getenv("EVAL_PACE_S", "3.0"))
 
 # The eval bypasses the precomputed FAQ cache by default.

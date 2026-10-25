@@ -18,7 +18,7 @@ from typing import Deque, Dict, Tuple
 
 from fastapi import HTTPException, Request
 
-from src.core.config import RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_S
+from src.core.config import RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_S, TRUST_PROXY
 from src.core.logging import log_event
 
 
@@ -59,10 +59,15 @@ def get_limiter() -> InProcessRateLimiter:
 
 
 def client_id(request: Request) -> str:
-    # Best-effort client identity. Behind a proxy, trust the first X-Forwarded-For hop.
+    # The FIRST X-Forwarded-For hop is whatever the client sent, so trusting
+    # it let anyone mint a fresh rate-limit identity per request. The LAST
+    # hop is appended by our own proxy and can't be forged — but only when a
+    # proxy is actually there, hence opt-in (render.yaml turns it on).
+    # ponytail: assumes exactly one trusted proxy hop; count hops from the
+    # right if a CDN is ever put in front of Render.
     xff = request.headers.get("x-forwarded-for")
-    if xff:
-        return xff.split(",")[0].strip()
+    if TRUST_PROXY and xff:
+        return xff.split(",")[-1].strip()
     return request.client.host if request.client else "unknown"
 
 

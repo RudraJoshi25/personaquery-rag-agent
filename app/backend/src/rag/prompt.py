@@ -2,11 +2,6 @@
 """
 The canonical PersonaQuery prompt — provider-neutral.
 
-This lived inside llm_groq.py while the pipeline had four interchangeable
-providers, which made the Groq module load-bearing for reasons that had
-nothing to do with Groq: deleting it would have deleted the identity rules
-and the citation contract along with it.
-
 Everything that shapes the ANSWER lives here. Everything that shapes the
 HTTP CALL lives in the provider module. That split is what makes swapping
 providers a config change rather than a prompt rewrite.

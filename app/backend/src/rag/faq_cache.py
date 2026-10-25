@@ -26,22 +26,24 @@ embeddings. FAQ_MIN_SIMILARITY is deliberately high (0.86) — a wrong
 cached answer served confidently is far worse than a cache miss, since a
 miss just falls through to the normal grounded pipeline.
 
-Staleness is handled by binding the cache to the ingest that produced it:
-if storage/chunks.jsonl is newer than the cache file, the cache is ignored
-rather than serving answers from a superseded corpus.
+Staleness is handled by binding the cache to the index that produced it:
+the cache records a SHA-256 of storage/chunks.jsonl, and if the live index
+hashes differently the cache is ignored. (File mtimes were used before, but
+in a Docker image every file's mtime is just the checkout time.)
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 
 from src.core.logging import log_event
 
-STORAGE_DIR = os.getenv("RAG_STORAGE_DIR", "storage")
+from src.core.config import RAG_STORAGE_DIR as STORAGE_DIR
 FAQ_PATH = Path(STORAGE_DIR) / "faq_cache.json"
 CHUNKS_PATH = Path(STORAGE_DIR) / "chunks.jsonl"
 
@@ -49,6 +51,15 @@ FAQ_ENABLED = os.getenv("FAQ_CACHE_ENABLED", "true").lower() in {"1", "true", "y
 FAQ_MIN_SIMILARITY = float(os.getenv("FAQ_MIN_SIMILARITY", "0.86"))
 
 _cache: Optional[Dict[str, Any]] = None
+
+
+def index_sha(path: Optional[Path] = None) -> str:
+    path = path or CHUNKS_PATH
+    # LF-normalised so a CRLF checkout (git on Windows) hashes the same as Linux.
+    if not path.exists():
+        return ""
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
 _loaded = False
 
 
@@ -69,8 +80,8 @@ def _load() -> Optional[Dict[str, Any]]:
         return None
 
     # Refuse to serve answers generated from an older corpus.
-    if CHUNKS_PATH.exists() and CHUNKS_PATH.stat().st_mtime > FAQ_PATH.stat().st_mtime:
-        print("[faq] cache is older than the index; ignoring it. "
+    if data.get("index_sha") != index_sha():
+        print("[faq] cache was built from a different index; ignoring it. "
               "Re-run scripts/precompute_faq.py to refresh.", flush=True)
         return None
 

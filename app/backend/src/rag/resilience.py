@@ -1,11 +1,10 @@
 # src/rag/resilience.py
 """
 LLM resilience primitives: typed errors, retry-with-backoff+jitter, and a
-thread-safe circuit breaker. Provider-agnostic — used to wrap Groq calls.
+thread-safe circuit breaker. Provider-agnostic.
 """
 from __future__ import annotations
 
-import os
 import random
 import threading
 import time
@@ -44,10 +43,6 @@ class LLMTimeout(LLMError):
 
 class LLMServerError(LLMError):
     code = "server_error"
-
-
-class CircuitOpen(LLMError):
-    code = "circuit_open"
 
 
 # Transient failures worth retrying.
@@ -142,16 +137,3 @@ class CircuitBreaker:
             self.fails = 0
             self.opened_at = 0.0
 
-
-# Process-wide breaker for the LLM provider.
-_breaker: Optional[CircuitBreaker] = None
-
-
-def get_breaker() -> CircuitBreaker:
-    global _breaker
-    if _breaker is None:
-        _breaker = CircuitBreaker(
-            fail_threshold=int(os.getenv("CB_FAIL_THRESHOLD", "5")),
-            cooldown_s=float(os.getenv("CB_COOLDOWN_S", "30")),
-        )
-    return _breaker

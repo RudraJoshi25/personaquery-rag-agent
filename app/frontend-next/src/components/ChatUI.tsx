@@ -117,7 +117,7 @@ export default function ChatUI() {
   }
 
   async function fetchWithRetry(input: RequestInfo, init: RequestInit, retries = 2, backoffMs = 800) {
-    let lastErr: any = null;
+    let lastErr: unknown = null;
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const res = await fetch(input, init);
@@ -129,7 +129,7 @@ export default function ChatUI() {
           }
         }
         return res;
-      } catch (e: any) {
+      } catch (e) {
         lastErr = e;
         if (attempt < retries) {
           await new Promise((r) => setTimeout(r, backoffMs * (attempt + 1)));
@@ -165,15 +165,7 @@ export default function ChatUI() {
 
       const data = await res.json();
 
-      // Adjust these keys if your backend uses different names
-      const answer: string =
-        typeof data?.answer === "string"
-          ? data.answer
-          : typeof data?.response === "string"
-          ? data.response
-          : typeof data?.text === "string"
-          ? data.text
-          : "";
+      const answer: string = typeof data?.answer === "string" ? data.answer : "";
 
       const sources: Source[] | undefined = Array.isArray(data?.sources) ? data.sources : undefined;
 
@@ -185,8 +177,8 @@ export default function ChatUI() {
           sources,
         },
       ]);
-    } catch (e: any) {
-      setError(e?.message || "Failed to fetch");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to fetch");
       setMessages((prev) => [
         ...prev,
         {
@@ -235,7 +227,7 @@ export default function ChatUI() {
         </div>
 
         <p className="mt-2 text-center text-sm text-white/70">
-          Ask questions about Rudra’s resume, patent, and research paper (RAG + Groq).
+          Ask questions about Rudra’s resume, patent, and research paper (RAG + Qwen 3.8).
         </p>
       </header>
 

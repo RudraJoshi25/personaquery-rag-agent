@@ -1,0 +1,20 @@
+# Direct dependencies. requirements.txt is the compiled lock — regenerate with:
+#   uv pip compile requirements.in -o requirements.txt --python-version 3.12 --python-platform linux
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-dotenv==1.0.1
+requests>=2.32
+
+# Retrieval
+rank-bm25>=0.2.2
+# fastembed runs dense + ColBERT late-interaction embeddings on ONNX Runtime.
+# It replaces sentence-transformers (and therefore torch, ~2GB installed),
+# which is what made this service too heavy for a 512MB free-tier container.
+fastembed>=0.8
+numpy>=2.1
+
+# Ingestion
+pypdf==4.3.1
+
+# Generation: Groq API (OpenAI-compatible) is called with plain
+# `requests`, so no provider SDK is needed.

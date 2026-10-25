@@ -14,10 +14,9 @@ import json
 import os
 import statistics
 from datetime import datetime
-from pathlib import Path
 from typing import Any, Dict, List
 
-LOG_DIR = Path(os.getenv("RAG_LOG_DIR", "logs"))
+from src.core.config import LOG_DIR
 LATENCY_LOG = LOG_DIR / "latency.jsonl"
 LATENCY_SUMMARY = LOG_DIR / "latency_summary.json"
 

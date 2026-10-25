@@ -14,7 +14,8 @@ INJECTION_PATTERNS = [
     r"make up (sources|citations|references)",
     r"bypass (safety|policy|guardrails)",
     r"print (the )?prompt",
-    r"leak",
+    # Bare "leak" blocked real questions ("data leakage in ML pipelines").
+    r"leak (the |your )?(system prompt|prompt|instructions)",
 ]
 
 INJ_RE = re.compile("|".join(f"(?:{p})" for p in INJECTION_PATTERNS), re.IGNORECASE)

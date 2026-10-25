@@ -14,10 +14,9 @@ import os
 import sys
 import threading
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
-LOG_DIR = Path(os.getenv("RAG_LOG_DIR", "logs"))
+from src.core.config import LOG_DIR
 APP_LOG = LOG_DIR / "app.jsonl"
 
 _LEVELS = {"DEBUG": 10, "INFO": 20, "WARN": 30, "WARNING": 30, "ERROR": 40}

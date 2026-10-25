@@ -29,9 +29,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import numpy as np  # noqa: E402
 
 from src.rag.rag import run_rag  # noqa: E402
-from src.rag.embedder import get_embedder  # noqa: E402
+from src.rag.embedder import DEFAULT_EMBED_MODEL, get_embedder  # noqa: E402
+from src.rag.faq_cache import index_sha  # noqa: E402
 
-STORAGE_DIR = os.getenv("RAG_STORAGE_DIR", "storage")
+from src.core.config import RAG_STORAGE_DIR as STORAGE_DIR  # noqa: E402
 OUT_PATH = Path(STORAGE_DIR) / "faq_cache.json"
 QA_PATH = Path(__file__).resolve().parents[1] / "src" / "eval" / "qa.jsonl"
 
@@ -148,7 +149,8 @@ def main() -> int:
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump({
             "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
-            "embed_model": os.getenv("EMBED_MODEL", "all-MiniLM-L6-v2"),
+            "embed_model": DEFAULT_EMBED_MODEL,
+            "index_sha": index_sha(),
             "entries": entries,
         }, f, ensure_ascii=False)
 

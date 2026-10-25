@@ -1,13 +1,15 @@
 # app/backend/scripts/ingest.py
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 from pathlib import Path
 from typing import List
 
 from src.core.config import PRIVATE_DATA_DIR
 from src.rag.embedder import get_embedder
-from src.rag.store import HybridStore
+from src.rag.store import HybridStore, STORAGE_DIR
 from src.rag.ingest_pipeline import ingest_paths
 
 
@@ -57,7 +59,7 @@ def _collect_paths() -> List[str]:
 
     for base, label in ((private, "private"), (curated, "curated")):
         if not base.exists():
-            print(f"⚠️  {label} dir not found: {base}")
+            print(f"{label} dir not found: {base}")
             continue
         found = sorted(
             str(p) for p in base.rglob("*")
@@ -67,7 +69,7 @@ def _collect_paths() -> List[str]:
             p.name for p in base.rglob("*")
             if p.suffix.lower() in exts and p.name in excluded_pdfs
         )
-        print(f"📁 {label}: {base}  ({len(found)} file(s))")
+        print(f"{label}: {base}  ({len(found)} file(s))")
         for p in found:
             print("   -", Path(p).name)
         for name in skipped:
@@ -78,21 +80,30 @@ def _collect_paths() -> List[str]:
 
 
 def main() -> None:
-    print("🚀 Running ingest:", __file__)
-    print("🧭 CWD:", os.getcwd())
+    print("Running ingest:", __file__)
+    print("CWD:", os.getcwd())
 
     paths = _collect_paths()
     if not paths:
-        print("❌ No ingestible files found. Put PDFs in data/private and retry.")
+        print("No ingestible files found. Put PDFs in data/private and retry.")
         return
 
     embedder = get_embedder()
     store = HybridStore(embed_dim=embedder.dim)
 
-    ingest_paths(paths, store)
+    ingest_paths(paths, store)  # also saves the store
 
-    # store.save() happens inside ingest_paths() in your pipeline
-    print("✅ Ingest complete.")
+    # Fingerprint every source so CI can tell when a doc changed but the
+    # index wasn't rebuilt (tests/test_index.py).
+    sources = {
+        # LF-normalised: git may check curated docs out with CRLF on Windows.
+        Path(p).name: hashlib.sha256(Path(p).read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+        for p in paths
+    }
+    with open(os.path.join(STORAGE_DIR, "sources.json"), "w", encoding="utf-8") as f:
+        json.dump(sources, f, indent=2, sort_keys=True)
+
+    print("Ingest complete.")
     print("   Output written to: ./storage (relative to app/backend)")
 
 

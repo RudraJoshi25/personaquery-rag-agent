@@ -1,5 +1,5 @@
 """
-Reranking: late-interaction (ColBERT) locally, optional hosted cross-encoder.
+Reranking: late-interaction (ColBERT), run locally.
 
 WHY LATE INTERACTION
 --------------------
@@ -18,19 +18,6 @@ running it through FastEmbed's ONNX runtime costs ~40-80ms with no network
 hop, which is FASTER than calling a hosted reranker API (~250-500ms). The
 usual reason to avoid ColBERT — heavyweight torch inference — does not apply
 when the candidate set is already narrowed to a few dozen chunks.
-
-REMOVED: HOSTED CROSS-ENCODER
------------------------------
-An optional NVIDIA NIM cross-encoder used to sit behind RERANK_CROSS_ENCODER
-as a "quality mode". It was removed when the pipeline consolidated onto
-Anthropic, because it was the last thing keeping an NVIDIA dependency (and
-a second API key) alive for a feature that was off by default and never
-measured as a win at this corpus size.
-
-Nothing was lost operationally: ColBERT below is and always was the
-reranker that actually runs. Anthropic publishes no reranking endpoint, so
-if a cross-encoder is ever wanted again it would mean reintroducing a
-second vendor — worth doing deliberately, not carrying dormant.
 """
 from __future__ import annotations
 

@@ -25,15 +25,12 @@ portfolio site.
 - Section-aware chunking with per-document-type profiles: resumes and
   transcripts chunk finely at 90–110 words with atomic bullet grouping,
   papers use 220-word windows
-- Vector store: NumPy matrix plus JSONL chunks; Chroma available as an
-  alternative backend. No external vector database.
+- Vector store: NumPy matrix plus JSONL chunks. No external vector database.
 
-**Generation:** Claude (Anthropic Messages API) at temperature 0.2, with
-`claude-sonnet-5` for answers and `claude-haiku-4-5` for internal query
-expansion. An earlier version ran a four-provider failover chain (Groq,
-Cerebras, NVIDIA NIM) built around free-tier token limits; that was removed
-once generation moved to prepaid Anthropic credits, since the chain existed
-only to work around per-minute quota caps.
+**Generation:** Qwen3.8-27B on the Groq free tier (OpenAI-compatible API) at
+temperature 0.2, also used for internal query expansion. Earlier versions ran a multi-provider
+failover chain, then Anthropic Claude, then Hugging Face Llama-3.3-70B; the
+pipeline is provider-neutral, so each switch was a single-module change.
 Answers must cite their sources with inline `[[cite:N]]` markers, and a
 cite-only-if-used rule strips sources the model did not actually rely on.
 
@@ -53,9 +50,8 @@ pass rate 1.0, source precision@k 0.65.
 
   Your LinkedIn summary describes PersonaQuery as "a RAG service using
   LangChain + LlamaIndex + Llama-3.3-70B". The repository uses NEITHER
-  LangChain NOR LlamaIndex, and no longer uses Llama-3.3-70B either (it now
-  calls Anthropic directly). requirements.txt is: fastapi, uvicorn,
-  python-dotenv, requests, rank-bm25, fastembed, numpy, pypdf, chromadb.
+  LangChain NOR LlamaIndex (it uses Qwen3.8-27B, via Groq). requirements.txt is: fastapi, uvicorn, python-dotenv,
+  requests, rank-bm25, fastembed, numpy, pypdf.
   The retrieval, fusion, chunking and context packing are all hand-written.
 
   This matters twice over. First, a recruiter asking the bot "does Rudra use

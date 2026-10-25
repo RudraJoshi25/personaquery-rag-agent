@@ -4,10 +4,9 @@ CI eval gate: retrieval-only hit-rate@k.
 
 Runs retrieve() over the golden set and FAILS (exit 1) if retrieval
 hit-rate@k drops below EVAL_HITRATE_GATE. Retrieval-only by design: no LLM
-call, so it needs no GROQ key and is fully deterministic in CI.
+call, so it needs no API token and is fully deterministic in CI.
 
-Current measured hit-rate@8 = 100%; gate defaults to 90% to catch regressions
-while tolerating minor noise.
+Gate defaults to 90% to catch regressions while tolerating minor noise.
 
 Run:  python -m src.eval.gate
 """

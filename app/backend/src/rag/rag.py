@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import Dict, Any, List, Optional
 import re
-import os
 import time
 
 from src.core.config import TOP_K, INJECTION_GUARD_ENABLED
@@ -11,7 +10,7 @@ from src.core.latency import record_latency
 from src.core.logging import log_event, new_trace_id
 from src.rag.guardrails import check_question
 from src.rag.retrieve_custom import retrieve, make_context_pack
-from src.rag.llm_anthropic import answer_with_anthropic
+from src.rag.llm import answer as generate
 from src.rag.cache import get_response_cache, response_key
 from src.rag.faq_cache import lookup_faq
 
@@ -140,7 +139,7 @@ def run_rag(
     )
 
     # --- LLM ---
-    llm = answer_with_anthropic(question, context, mode=mode, trace_id=trace_id)
+    llm = generate(question, context, mode=mode, trace_id=trace_id)
     provider = llm.provider
     answer = llm.text
     if not llm.ok:

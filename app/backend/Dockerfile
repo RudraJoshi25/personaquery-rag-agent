@@ -26,9 +26,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Minimal build deps; removed in the same layer to keep the image small.
+# curl for HEALTHCHECK only; every Python dep ships a wheel, so no compiler.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential curl \
+    && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

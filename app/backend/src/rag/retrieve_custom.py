@@ -28,7 +28,7 @@ from typing import List, Dict, Any, Tuple, Optional
 from concurrent.futures import ThreadPoolExecutor
 import os
 
-from src.core.config import TOP_K
+from src.core.config import TOP_K, RAG_VECTOR_ENABLED
 from src.core.logging import log_event
 from src.rag.store import HybridStore
 from src.rag.doc_profiles import MAX_CHUNKS_PER_SOURCE_IN_RESULTS
@@ -49,8 +49,7 @@ def _get_store() -> HybridStore:
 
     embed_dim = int(os.getenv("EMBED_DIM", "0")) or get_embedder().dim
     st = HybridStore(embed_dim=embed_dim)
-    vector_enabled = os.getenv("RAG_VECTOR_ENABLED", "1").lower() in {"1", "true", "yes"}
-    if not st.load(load_vectors=vector_enabled):
+    if not st.load(load_vectors=RAG_VECTOR_ENABLED):
         raise RuntimeError(
             "RAG store not found. Run ingestion to create storage/chunks.jsonl, "
             "vectors.npy, bm25.json"
@@ -134,7 +133,6 @@ def retrieve(
     trace_id: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     store = _get_store()
-    vector_enabled = os.getenv("RAG_VECTOR_ENABLED", "1").lower() in {"1", "true", "yes"}
 
     queries = expand_query(question, trace_id=trace_id)
 
@@ -147,10 +145,10 @@ def retrieve(
     if len(queries) > 1:
         with ThreadPoolExecutor(max_workers=min(len(queries), 4)) as pool:
             results = list(pool.map(
-                lambda q: _search_one(store, q, cand_k, vector_enabled), queries
+                lambda q: _search_one(store, q, cand_k, RAG_VECTOR_ENABLED), queries
             ))
     else:
-        results = [_search_one(store, queries[0], cand_k, vector_enabled)]
+        results = [_search_one(store, queries[0], cand_k, RAG_VECTOR_ENABLED)]
 
     ranked_lists: List[List[int]] = []
     vec_scores_all: Dict[int, float] = {}

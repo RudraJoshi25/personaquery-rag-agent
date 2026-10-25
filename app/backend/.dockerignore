@@ -8,3 +8,5 @@ logs/
 src/eval/results/
 .git/
 .github/
+tests/
+latency_bench.py

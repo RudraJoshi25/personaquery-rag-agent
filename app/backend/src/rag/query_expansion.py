@@ -20,15 +20,15 @@ from typing import List
 
 from src.core.logging import log_event
 
-# Expansion runs on the cheapest fast model (Haiku by default, configured in
-# llm_anthropic): quality barely improves with a bigger model here, latency
-# roughly triples, and the output never reaches the user directly.
+# Expansion model is GROQ_EXPANSION_MODEL (see llm.py); its output never
+# reaches the user, so a smaller, faster model is fine here.
 
 
 def _raw_completion(prompt: str) -> str:
-    from src.rag.llm_anthropic import raw_completion
+    from src.rag.llm import raw_completion
 
     return raw_completion(prompt, max_tokens=200, temperature=0.4)
+
 N_VARIANTS = int(os.getenv("QUERY_VARIANTS", "3"))
 EXPANSION_ENABLED = os.getenv("QUERY_EXPANSION_ENABLED", "true").lower() in {"1", "true", "yes"}
 

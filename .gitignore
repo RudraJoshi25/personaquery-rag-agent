@@ -229,3 +229,8 @@ app/backend/logs/
 # OS / IDE
 .DS_Store
 .vscode/.claude/
+
+# Eval run outputs (regenerate with python -m src.eval.run_eval)
+app/backend/src/eval/results/
+# Legacy Chroma store (backend removed)
+app/backend/storage/chroma/

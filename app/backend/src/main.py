@@ -1,15 +1,35 @@
 # src/main.py
 from __future__ import annotations
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.routes_chat import router as chat_router
-from src.core.config import RAG_VECTOR_ENABLED
+from src.core.config import RAG_VECTOR_ENABLED, RAG_STORAGE_DIR
 from pathlib import Path
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Lightweight diagnostics for Render
+    try:
+        import psutil  # optional
+        mem_mb = psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024
+    except Exception:
+        mem_mb = None
+
+    storage_dir = Path(RAG_STORAGE_DIR)
+    storage_ok = all((storage_dir / f).exists() for f in ["chunks.jsonl", "vectors.npy", "bm25.json"])
+    print(
+        f"[startup] vector_enabled={RAG_VECTOR_ENABLED} storage_ok={storage_ok} mem_mb={mem_mb}",
+        flush=True,
+    )
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 cors_allow_all = os.getenv("CORS_ALLOW_ALL", "").lower() in {"1", "true", "yes"}
 cors_origins = [o.strip() for o in os.getenv("CORS_ALLOW_ORIGINS", "").split(",") if o.strip()]
@@ -55,19 +75,3 @@ def health():
 
 app.include_router(chat_router)
 
-
-@app.on_event("startup")
-async def startup_log():
-    # Lightweight diagnostics for Render
-    try:
-        import psutil  # optional
-        mem_mb = psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024
-    except Exception:
-        mem_mb = None
-
-    storage_dir = Path(os.getenv("RAG_STORAGE_DIR", "storage"))
-    storage_ok = all((storage_dir / f).exists() for f in ["chunks.jsonl", "vectors.npy", "bm25.json"])
-    print(
-        f"[startup] vector_enabled={RAG_VECTOR_ENABLED} load_vectors={RAG_VECTOR_ENABLED} storage_ok={storage_ok} mem_mb={mem_mb}",
-        flush=True,
-    )

@@ -46,7 +46,7 @@ def main():
             continue
         latencies.append(elapsed)
         print(f"  [{i:02d}] {elapsed:.2f}s  '{q[:50]}'")
-        time.sleep(4.0)  # space calls to stay under Groq free-tier rate limit
+        time.sleep(4.0)  # space calls to stay under provider rate limits
 
     if not latencies:
         print("No successful queries.")

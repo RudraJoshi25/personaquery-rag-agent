@@ -11,7 +11,7 @@ from src.api import rate_limit, routes_chat
 
 @pytest.fixture
 def client(monkeypatch):
-    # Fast, deterministic /chat: no model load, no Groq.
+    # Fast, deterministic /chat: no model load, no LLM call.
     monkeypatch.setattr(
         routes_chat, "run_rag",
         lambda q, top_k=8, mode="chat": {"answer": "stub [[cite:1]]", "sources": [], "trace_id": "t"},
@@ -96,3 +96,20 @@ def test_induced_error_is_clean_no_leak(monkeypatch):
     j = r.json()
     assert j["error"] == "internal_error"
     assert "trace_id" in j             # correlation id for server-side log
+
+
+def test_spoofed_forwarded_for_cannot_dodge_limit(monkeypatch):
+    """A client-chosen first XFF hop must not become a fresh identity."""
+    monkeypatch.setattr(rate_limit, "TRUST_PROXY", True)
+    monkeypatch.setattr(
+        routes_chat, "run_rag",
+        lambda q, top_k=8, mode="chat": {"answer": "ok", "sources": [], "trace_id": "t"},
+    )
+    rate_limit._limiter = rate_limit.InProcessRateLimiter(limit=1, window_s=60)
+    with TestClient(app, raise_server_exceptions=False) as c:
+        codes = [
+            c.post("/chat", json={"question": "hi"},
+                   headers={"X-Forwarded-For": f"10.0.0.{i}, 203.0.113.7"}).status_code
+            for i in range(2)
+        ]
+    assert codes == [200, 429]

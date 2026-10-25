@@ -13,14 +13,12 @@ services:
     autoDeploy: true
     envVars:
       # --- secrets: set these in the Render dashboard, never in git ---
-      - key: ANTHROPIC_API_KEY
+      - key: GROQ_API_KEY
         sync: false
 
-      # --- generation (Anthropic only) ---
-      - key: ANTHROPIC_CHAT_MODEL
-        value: claude-sonnet-5
-      - key: ANTHROPIC_EXPANSION_MODEL
-        value: claude-haiku-4-5-20251001
+      # --- generation (Groq free tier) ---
+      - key: GROQ_CHAT_MODEL
+        value: qwen/qwen3.8-27b
       # Precomputed answers for common questions — served without any
       # provider call at all. Rebuild with scripts/precompute_faq.py after
       # each ingest; this is the main cost and availability lever now that
@@ -37,18 +35,12 @@ services:
         value: ../../data/private
       - key: EMBED_MODEL
         value: all-MiniLM-L6-v2
-      - key: EMBED_BACKEND
-        value: fastembed
       - key: EMBED_DIM
         value: "384"
       - key: TOP_K
         value: "8"
       - key: RAG_VECTOR_ENABLED
         value: "true"
-      - key: RAG_HYBRID_ENABLED
-        value: "true"
-      - key: VECTOR_BACKEND
-        value: numpy
 
       # --- query expansion / fusion / rerank ---
       - key: QUERY_EXPANSION_ENABLED
@@ -71,6 +63,9 @@ services:
         value: "20"
       - key: RATE_LIMIT_WINDOW_S
         value: "60"
+      # Render's proxy appends the real client IP to X-Forwarded-For.
+      - key: TRUST_PROXY
+        value: "true"
 
       # --- CORS: portfolio + PersonaQuery frontends ---
       # Regex covers localhost dev and any *.vercel.app preview deploy.
