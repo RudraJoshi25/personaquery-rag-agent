@@ -19,6 +19,10 @@ services:
       # --- generation (Groq free tier) ---
       - key: GROQ_CHAT_MODEL
         value: qwen/qwen3.8-27b
+      # Expansion on a separate model: Groq limits are per model, so
+      # expansion calls don't eat the chat model's per-minute budget.
+      - key: GROQ_EXPANSION_MODEL
+        value: openai/gpt-oss-20b
       # Precomputed answers for common questions — served without any
       # provider call at all. Rebuild with scripts/precompute_faq.py after
       # each ingest; this is the main cost and availability lever now that

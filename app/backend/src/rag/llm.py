@@ -54,6 +54,8 @@ GROQ_REASONING_EFFORT = os.getenv("GROQ_REASONING_EFFORT", "low")
 
 # Qwen3 may emit a <think>...</think> block before the answer; never show it.
 _THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
+# End of a complete cited sentence: "]]" plus optional terminator.
+_CITED_END_RE = re.compile(r"\]\][.!?]?")
 
 # Number of times the API was actually invoked.
 CALL_COUNT = 0
@@ -111,9 +113,17 @@ def _get_breaker() -> CircuitBreaker:
 
 def _extract_text(data: dict) -> str:
     try:
-        return _THINK_RE.sub("", data["choices"][0]["message"]["content"] or "").strip()
+        choice = data["choices"][0]
+        text = _THINK_RE.sub("", choice["message"]["content"] or "").strip()
     except (KeyError, IndexError, TypeError):
         return ""
+    # Cut off at max_tokens (hidden reasoning shares the budget): keep only
+    # the complete cited sentences. Nothing complete -> "" -> empty_content,
+    # which retries and then falls back to cited source text.
+    if choice.get("finish_reason") == "length":
+        ends = list(_CITED_END_RE.finditer(text))
+        text = text[: ends[-1].end()] if ends else ""
+    return text
 
 
 def _post(payload: dict, timeout: float) -> str:

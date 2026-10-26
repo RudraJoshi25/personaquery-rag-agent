@@ -182,3 +182,20 @@ def test_groq_request_too_large_not_retried(monkeypatch):
 def test_default_budget_fits_free_tier_otpm():
     from src.rag.query_expansion import EXPANSION_MAX_TOKENS
     assert llm.GROQ_MAX_TOKENS + EXPANSION_MAX_TOKENS <= 1000
+
+
+def _cut_body(text):
+    return {"choices": [{"message": {"content": text}, "finish_reason": "length"}]}
+
+
+def test_truncated_answer_keeps_complete_cited_sentences(monkeypatch):
+    _patch_post(monkeypatch, [FakeResp(200, _cut_body(
+        'It is a RAG assistant [[cite:1]]. Is it cited? [[cite:2]]! It powers the "Ask'))])
+    res = llm.answer("q", "ctx")
+    assert res.ok and res.text == "It is a RAG assistant [[cite:1]]. Is it cited? [[cite:2]]!"
+
+
+def test_truncated_answer_with_nothing_complete_degrades(monkeypatch):
+    calls = _patch_post(monkeypatch, [FakeResp(200, _cut_body("PersonaQuery is a retrieval-augm"))])
+    res = llm.answer("q", "ctx")
+    assert res.ok is False and calls["n"] > 1  # retried as empty_content, then gave up

@@ -26,14 +26,14 @@ query ─▶ guardrails ─▶ response cache ─▶ FAQ cache ─▶ query expa
 | Layer        | Choice |
 |--------------|--------|
 | Backend      | FastAPI + Uvicorn (`app/backend`) |
-| Frontend     | Next.js (`app/frontend-next`), deployed on Vercel |
+| Frontend     | Next.js (`app/frontend-next`), deployed on Cloudflare Pages (https://rudrajoshi.dev) |
 | Embeddings   | `BAAI/bge-small-en-v1.5` via FastEmbed (ONNX, no torch), 384-dim |
 | Keyword      | BM25 (`rank-bm25`) |
 | Fusion       | Reciprocal Rank Fusion (k=60) |
 | Rerank       | ColBERT v2 late interaction, vectors precomputed at ingest |
 | LLM          | `qwen/qwen3.8-27b` via Groq free tier (OpenAI-compatible), temperature 0.2 |
 | Vector store | NumPy matrix + JSONL chunks; no external DB |
-| Deployment   | Backend on Render (Docker, `render.yaml`), frontend on Vercel |
+| Deployment   | Backend on Render (Docker, `render.yaml`), frontend on Cloudflare Pages |
 
 ---
 

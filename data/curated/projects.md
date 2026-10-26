@@ -15,10 +15,12 @@ prompt-injection guardrails. It powers the "Ask AI" assistant embedded in the
 portfolio site.
 
 **Repository layout:** FastAPI backend (`app/backend`), Next.js frontend
-(`app/frontend-next`), deployed backend on Render and frontend on Vercel.
+(`app/frontend-next`), deployed backend on Render and frontend on Cloudflare Pages
+(https://rudrajoshi.dev).
 
 **Retrieval pipeline:**
-- Dense embeddings: `all-MiniLM-L6-v2`, 384-dimensional, cosine similarity
+- Dense embeddings: `BAAI/bge-small-en-v1.5` via FastEmbed (ONNX Runtime),
+  384-dimensional, cosine similarity; ColBERT v2 late-interaction reranking
 - Sparse keyword search: BM25 (Okapi, via `rank-bm25`)
 - Fusion: Reciprocal Rank Fusion, k=60 — chosen because it needs no score
   calibration between BM25 and cosine, which are not on comparable scales
@@ -28,7 +30,7 @@ portfolio site.
 - Vector store: NumPy matrix plus JSONL chunks. No external vector database.
 
 **Generation:** Qwen3.8-27B on the Groq free tier (OpenAI-compatible API) at
-temperature 0.2, also used for internal query expansion. Earlier versions ran a multi-provider
+temperature 0.2; internal query expansion runs on GPT-OSS-20B, also on Groq. Earlier versions ran a multi-provider
 failover chain, then Anthropic Claude, then Hugging Face Llama-3.3-70B; the
 pipeline is provider-neutral, so each switch was a single-module change.
 Answers must cite their sources with inline `[[cite:N]]` markers, and a
@@ -37,13 +39,14 @@ cite-only-if-used rule strips sources the model did not actually rely on.
 **Engineering practices:** prompt-injection guardrails, per-IP rate limiting,
 a response cache, retry-with-backoff resilience around the LLM call,
 structured JSON logging with trace IDs, latency instrumentation, a golden-set
-evaluation harness, and a CI pipeline that runs tests and the eval gate on
-every push.
+evaluation harness, and a CI pipeline that runs ruff, the full pytest suite
+and the eval gate on every push. The resume's test count and 20-case golden
+set are from an earlier version; the golden-set size below is current.
 
-**Evaluation:** a 20-item golden set measuring retrieval hit-rate and
-recall@k, answer keyword match, and citation compliance. Most recent run:
-retrieval hit-rate 1.0, mean recall@k 1.0, answer pass rate 0.95, citation
-pass rate 1.0, source precision@k 0.65.
+**Evaluation:** an 18-item golden set measuring retrieval hit-rate and
+recall@k, answer keyword match, and citation compliance. The CI gate fails the
+build if retrieval hit-rate@8 drops below 0.90; the most recent run scored
+0.944 (17 of 18).
 
 <!--
   DISCREPANCY — Rudra, please read.
