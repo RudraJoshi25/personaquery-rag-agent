@@ -10,3 +10,6 @@ src/eval/results/
 .github/
 tests/
 latency_bench.py
+.models/
+.env.*
+.ruff_cache/

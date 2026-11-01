@@ -37,8 +37,9 @@ def main() -> None:
     for it in items:
         h = retrieve(it["question"], top_k=K)
         texts = [x["text"] for x in h]
-        if hit_rate_at_k(texts, it.get("expected_snippets", []), k=K):
-            hits += 1
+        ok = hit_rate_at_k(texts, it.get("expected_snippets", []), k=K)
+        hits += ok
+        print(f"  {'PASS' if ok else 'FAIL'} {it.get('id', '?')} {it['question']}")
 
     n = len(items)
     rate = hits / n if n else 0.0

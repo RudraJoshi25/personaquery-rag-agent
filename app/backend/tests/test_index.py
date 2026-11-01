@@ -40,4 +40,4 @@ def test_phone_number_never_indexed():
     assert "400111222" not in out
     assert "Phone: available on request" in out and "Email: me@x.com" in out
     with open(STORAGE / "chunks.jsonl", encoding="utf-8") as f:
-        assert not re.search(r"\+61\s?4\d{8}", f.read())
+        assert not re.search(r"\+?61[\s-]?4\d{2}[\s-]?\d{3}[\s-]?\d{3}", f.read())

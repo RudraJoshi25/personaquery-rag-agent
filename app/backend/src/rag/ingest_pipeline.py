@@ -98,15 +98,25 @@ def _clean_pdf_text(text: str) -> str:
 from src.rag.chunking import make_chunks
 from src.rag.embedder import get_embedder
 from src.rag.rerank import precompute_doc_vectors
+from src.rag.source_corrections import APPLIES_TO, CORRECTIONS, apply_corrections
 from src.rag.store import HybridStore, StoredChunk
 
 
 def read_pdf_pages(path: str) -> list[dict]:
     reader = PdfReader(path)
+    correct = os.path.basename(path) == APPLIES_TO
+    totals = [0] * len(CORRECTIONS)
     pages = []
     for i, page in enumerate(reader.pages):
         txt = _clean_pdf_text(page.extract_text() or "")
+        if correct:
+            txt, counts = apply_corrections(txt)
+            totals = [a + b for a, b in zip(totals, counts)]
         pages.append({"page_label": str(i + 1), "text": txt})
+    if correct:
+        for (phrase, _), n in zip(CORRECTIONS, totals):
+            if n == 0:
+                print(f"[ingest] WARNING: CV correction matched nothing: {phrase!r}")
     return pages
 
 

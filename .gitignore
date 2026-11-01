@@ -234,3 +234,6 @@ app/backend/logs/
 app/backend/src/eval/results/
 # Legacy Chroma store (backend removed)
 app/backend/storage/chroma/
+
+# Build-time ONNX model cache (scripts/download_models.py)
+app/backend/.models/

@@ -16,5 +16,8 @@ numpy>=2.1
 # Ingestion
 pypdf==4.3.1
 
+# Startup log reports resident memory (mem_mb); the 512MB tier is tight.
+psutil>=7.0
+
 # Generation: Groq API (OpenAI-compatible) is called with plain
 # `requests`, so no provider SDK is needed.

@@ -35,15 +35,15 @@ DEGRADED_MESSAGE = "The answer service is temporarily unavailable. Please try ag
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_URL = os.getenv("GROQ_URL", "https://api.groq.com/openai/v1/chat/completions")
-# One model for answers and query expansion: the free tier is rate-limited
-# per model, and a single id keeps config minimal.
 GROQ_CHAT_MODEL = os.getenv("GROQ_CHAT_MODEL", "qwen/qwen3.8-27b")
-GROQ_EXPANSION_MODEL = os.getenv("GROQ_EXPANSION_MODEL", GROQ_CHAT_MODEL)
-# Free tier caps OUTPUT tokens at 1000/min per org (OTPM), reasoning
+# Expansion on a different model: Groq's free-tier limits are per model, so
+# expansion calls don't spend the chat model's per-minute output budget.
+GROQ_EXPANSION_MODEL = os.getenv("GROQ_EXPANSION_MODEL", "openai/gpt-oss-20b")
+# Free tier caps OUTPUT tokens at 1000/min per model (OTPM), reasoning
 # included, and rejects any request whose max_tokens alone exceeds it
-# ("Request too large"). 700 here + 250 for expansion keeps one full
-# question under the cap.
-GROQ_MAX_TOKENS = int(os.getenv("GROQ_MAX_TOKENS", "700"))
+# ("Request too large"). 1000 is that ceiling: at 700, analytical questions
+# spent the whole budget on hidden reasoning and returned no content.
+GROQ_MAX_TOKENS = int(os.getenv("GROQ_MAX_TOKENS", "1000"))
 # Low temperature: grounded answers should not vary between runs.
 GROQ_TEMPERATURE = float(os.getenv("GROQ_TEMPERATURE", "0.2"))
 
@@ -143,8 +143,15 @@ def _post(payload: dict, timeout: float) -> str:
         raise LLMServerError(f"transport: {type(e).__name__}")
 
     if r.status_code == 200:
-        text = _extract_text(r.json())
+        data = r.json()
+        text = _extract_text(data)
         if not text:
+            # Cut off at max_tokens with nothing usable: the model spent the
+            # budget reasoning. Retrying the same prompt does the same, and
+            # every retry burns another max_tokens of the per-minute output
+            # cap, so fall back now instead of 429-ing for 15s.
+            if (data.get("choices") or [{}])[0].get("finish_reason") == "length":
+                raise LLMError("reasoning used the whole token budget", code="truncated")
             # A 200 with no content is a real failure, not an empty answer;
             # returning it as success would cache an empty string.
             raise LLMServerError("empty_content")
@@ -242,8 +249,9 @@ def answer(question: str, context: str, mode: str = "chat",
         log_event("INFO", "llm_ok", trace_id=trace_id, attempts=calls["n"])
         return LLMResult(text, True, "ok", calls["n"])
     except LLMError as e:
-        # Our own budget running out is not a provider failure.
-        if e.code != "quota_exhausted":
+        # Our own budget running out, or a long-winded reply, is not a
+        # provider failure; neither should open the breaker for everyone.
+        if e.code not in ("quota_exhausted", "truncated"):
             breaker.record_failure()
         log_event("ERROR", "llm_failed", trace_id=trace_id,
                   error_code=e.code, attempts=calls["n"], breaker=breaker.status())

@@ -17,7 +17,12 @@ from collections import deque
 
 from fastapi import HTTPException, Request
 
-from src.core.config import RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_S, TRUST_PROXY
+from src.core.config import (
+    RATE_LIMIT_REQUESTS,
+    RATE_LIMIT_WINDOW_S,
+    TRUST_PROXY,
+    TRUSTED_PROXY_HOPS,
+)
 from src.core.logging import log_event
 from src.rag.cache import TTLCache
 
@@ -67,20 +72,23 @@ def get_limiter() -> InProcessRateLimiter:
 
 
 def client_id(request: Request) -> str:
-    # The FIRST X-Forwarded-For hop is whatever the client sent, so trusting
-    # it let anyone mint a fresh rate-limit identity per request. The LAST
-    # hop is appended by our own proxy and can't be forged — but only when a
-    # proxy is actually there, hence opt-in (render.yaml turns it on).
-    # ponytail: assumes exactly one trusted proxy hop; count hops from the
-    # right if a CDN is ever put in front of Render.
+    # Anything left of what our proxies appended is client-supplied, so
+    # trusting the FIRST hop let anyone mint a fresh rate-limit identity per
+    # request. Count from the right instead: production XFF is
+    # "client, Cloudflare, Render-internal", so with TRUSTED_PROXY_HOPS=2 the
+    # caller is xff[-3]. Opt-in, because without a proxy the header is forged.
     xff = request.headers.get("x-forwarded-for")
-    # TEMPORARY: confirm Render adds exactly one XFF hop (the last entry
-    # should be the caller's real IP). Logs IPs: remove once verified.
-    log_event("INFO", "xff_debug", xff=xff,
-              peer=request.client.host if request.client else None)
+    peer = request.client.host if request.client else "unknown"
+    # TEMPORARY: confirm the production XFF shape matches TRUSTED_PROXY_HOPS.
+    # Logs IPs: remove once verified.
+    log_event("INFO", "xff_debug", xff=xff, peer=peer)
     if TRUST_PROXY and xff:
-        return xff.split(",")[-1].strip()
-    return request.client.host if request.client else "unknown"
+        hops = [h.strip() for h in xff.split(",") if h.strip()]
+        if len(hops) > TRUSTED_PROXY_HOPS:
+            return hops[-(TRUSTED_PROXY_HOPS + 1)]
+    # Header shorter than the proxy chain: it didn't come through our
+    # proxies as expected, so its entries can't be trusted.
+    return peer
 
 
 def rate_limit_dep(request: Request) -> str:

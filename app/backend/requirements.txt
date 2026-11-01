@@ -67,6 +67,8 @@ packaging==26.3
     #   onnxruntime
 pillow==12.3.0
     # via fastembed
+psutil==7.2.2
+    # via -r requirements.in
 protobuf==7.36.2
     # via onnxruntime
 py-rust-stemmers==0.1.8

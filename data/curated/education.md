@@ -16,13 +16,13 @@
 - **Degree:** Master of Computer Science
 - **Major:** Machine Learning and Big Data
 - **Years:** 2023 – 2025
-- **Awarded:** August 2025
+- **Awarded:** 2025
 - **Credit points:** 96
 - **Scholarship:** UOW Postgraduate Academic Excellence Scholarship (2023),
   a 30% tuition fee waiver
 - Satisfied the University's Independent Learners Introductory Program
 
-### Subjects studied
+### Subjects studied (Master of Computer Science)
 
 - Computer Vision Algorithms and Systems (CSCI935)
 - Modern Cryptography (CSCI971)
@@ -56,11 +56,11 @@
 
 - **Institution:** GSFC University, Vadodara, Gujarat, India
 - **Degree:** Bachelor of Technology in Computer Science and Engineering
-- **Admitted:** July 2019
-- **Graduated:** May 2023
+- **Admitted:** 2019
+- **Graduated:** 2023
 - **Award:** Achiever's Award, academic year 2021–22
 
-### Subjects studied
+### Subjects studied (B.Tech)
 
 **Foundation and mathematics:** Communication Skills, Mathematics I,
 Mathematics II, Discrete Mathematics, Mathematics for Specialization,
@@ -80,9 +80,8 @@ Emerging Technology, Entrepreneurship Development.
 
 ### Highlights
 
-- The Cognitive-Chair research — which won Best Paper at IEEE AIST 2022 and
-  led to an Indian government patent filing — was carried out during this
-  degree.
+- The Cognitive-Chair research — which won Best Paper at IEEE AIST 2022 —
+  was carried out during this degree.
 - Active in competitions and workshops throughout: IoT Challenge at Aakaar'20
   (IIT Bombay), VIGYAN 2.0 state-level hackathon, a GUJCOST/DST training
   programme on Machine Learning and IoT, and a Unity 3D game development

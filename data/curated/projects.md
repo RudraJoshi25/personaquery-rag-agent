@@ -14,13 +14,13 @@ paper, patent, transcripts and project docs — with inline citations and
 prompt-injection guardrails. It powers the "Ask AI" assistant embedded in the
 portfolio site.
 
-**Repository layout:** FastAPI backend (`app/backend`), Next.js frontend
-(`app/frontend-next`), deployed backend on Render and frontend on Cloudflare Pages
-(https://rudrajoshi.dev).
+**Repository layout:** FastAPI backend (`app/backend`) on Google Cloud Run,
+and a separate Next.js frontend (`app/frontend-next`). The portfolio at
+https://rudrajoshi.dev is a React site that calls the backend.
 
 **Retrieval pipeline:**
 - Dense embeddings: `BAAI/bge-small-en-v1.5` via FastEmbed (ONNX Runtime),
-  384-dimensional, cosine similarity; ColBERT v2 late-interaction reranking
+  384-dimensional, cosine similarity; ColBERT late-interaction reranking (answerai-colbert-small-v1)
 - Sparse keyword search: BM25 (Okapi, via `rank-bm25`)
 - Fusion: Reciprocal Rank Fusion, k=60 — chosen because it needs no score
   calibration between BM25 and cosine, which are not on comparable scales
@@ -40,13 +40,11 @@ cite-only-if-used rule strips sources the model did not actually rely on.
 a response cache, retry-with-backoff resilience around the LLM call,
 structured JSON logging with trace IDs, latency instrumentation, a golden-set
 evaluation harness, and a CI pipeline that runs ruff, the full pytest suite
-and the eval gate on every push. The resume's test count and 20-case golden
-set are from an earlier version; the golden-set size below is current.
+and the eval gate on every push.
 
 **Evaluation:** an 18-item golden set measuring retrieval hit-rate and
 recall@k, answer keyword match, and citation compliance. The CI gate fails the
-build if retrieval hit-rate@8 drops below 0.90; the most recent run scored
-0.944 (17 of 18).
+build if retrieval hit-rate@8 drops below 0.90.
 
 <!--
   DISCREPANCY — Rudra, please read.
@@ -82,8 +80,7 @@ typewriter animation.
 - `POST /api/analyze/symptoms` — accepts `{ symptoms }`, returns
   `{ status, advice }`
 
-**Deployment:** local development only at time of writing — no Docker, no
-CI/CD.
+**Deployment:** live at https://healthecho.vercel.app/.
 
 <!--
   DISCREPANCY — Rudra, please read.
@@ -182,11 +179,6 @@ https://ieeexplore.ieee.org/document/10065338
 
 **Co-authors:** Kshitij Joshi, Abhilasha Vyas, Smit Joshi and others, with
 Rudra Joshi as a co-author. Carried out during the B.Tech at GSFC University.
-
-**Related patent:** *Intelligent Face Recognition System using Deep Recurrent
-Neural Network*, Indian patent application 202211058943 A, filed
-15 October 2022 — a CNN+RNN based face recognition system, a separate piece
-of work co-filed with the same research group.
 
 <!--
   Note for Rudra: the raw IEEE paper PDF and the raw patent-office PDF are

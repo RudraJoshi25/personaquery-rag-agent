@@ -84,7 +84,7 @@ def test_identity_query_surfaces_resume():
     """An identity question must reach the resume, not only co-author blocks."""
     hits = _retrieve_or_skip("what is my email / contact")
     files = [h["metadata"].get("file_name", "") for h in hits]
-    assert "Rudra_Joshi_Resume.pdf" in files, f"resume absent from top-k: {files}"
+    assert "Rudra_CV.pdf" in files, f"resume absent from top-k: {files}"
 
 
 def test_no_single_source_monopolises_results():

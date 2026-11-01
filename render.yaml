@@ -56,7 +56,7 @@ services:
       - key: RERANK_ENABLED
         value: "true"
       - key: COLBERT_MODEL
-        value: colbert-ir/colbertv2.0
+        value: answerdotai/answerai-colbert-small-v1
 
       # --- safety / limits ---
       - key: INJECTION_GUARD_ENABLED

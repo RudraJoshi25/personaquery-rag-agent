@@ -180,8 +180,13 @@ def test_groq_request_too_large_not_retried(monkeypatch):
 
 
 def test_default_budget_fits_free_tier_otpm():
+    # Free tier: max 1000 output tokens per minute PER MODEL, and a request
+    # asking for more is rejected outright. Expansion runs on its own model,
+    # so each budget only has to fit its own model's cap.
     from src.rag.query_expansion import EXPANSION_MAX_TOKENS
-    assert llm.GROQ_MAX_TOKENS + EXPANSION_MAX_TOKENS <= 1000
+    assert llm.GROQ_EXPANSION_MODEL != llm.GROQ_CHAT_MODEL
+    assert llm.GROQ_MAX_TOKENS <= 1000
+    assert EXPANSION_MAX_TOKENS <= 1000
 
 
 def _cut_body(text):
@@ -195,7 +200,9 @@ def test_truncated_answer_keeps_complete_cited_sentences(monkeypatch):
     assert res.ok and res.text == "It is a RAG assistant [[cite:1]]. Is it cited? [[cite:2]]!"
 
 
-def test_truncated_answer_with_nothing_complete_degrades(monkeypatch):
+def test_truncated_answer_with_nothing_complete_falls_back_without_retry(monkeypatch):
     calls = _patch_post(monkeypatch, [FakeResp(200, _cut_body("PersonaQuery is a retrieval-augm"))])
     res = llm.answer("q", "ctx")
-    assert res.ok is False and calls["n"] > 1  # retried as empty_content, then gave up
+    assert res.ok is False and res.status == "truncated"
+    assert calls["n"] == 1                          # no retry, no extra quota
+    assert llm._get_breaker().status()["fails"] == 0  # not a provider failure

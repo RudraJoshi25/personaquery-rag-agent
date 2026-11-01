@@ -6,7 +6,6 @@ import json
 import re
 
 from scripts import precompute_faq as pf
-from src.rag import llm
 from src.rag.faq_cache import index_sha
 
 
@@ -34,7 +33,6 @@ def test_only_merges_single_entry(tmp_path, monkeypatch):
     monkeypatch.setattr(pf, "STORAGE_DIR", str(tmp_path))
     monkeypatch.setattr(pf, "get_embedder", lambda: _FakeEmbedder())
     monkeypatch.setattr(pf, "run_rag", lambda q, **k: {"answer": "new [[cite:1]]", "sources": []})
-    monkeypatch.setattr(llm, "GROQ_MAX_TOKENS", llm.GROQ_MAX_TOKENS)  # main() raises it; restore
 
     assert pf.main(["--only", "redo me?"]) == 0
 
@@ -51,7 +49,6 @@ def test_only_keeps_successes_when_a_later_entry_fails(tmp_path, monkeypatch):
     monkeypatch.setattr(pf, "STORAGE_DIR", str(tmp_path))
     monkeypatch.setattr(pf, "get_embedder", lambda: _FakeEmbedder())
     monkeypatch.setattr(pf.time, "sleep", lambda s: None)
-    monkeypatch.setattr(llm, "GROQ_MAX_TOKENS", llm.GROQ_MAX_TOKENS)
     answers = {"good?": "fine [[cite:1]].", "bad?": "I'm having trouble generating a polished answer"}
     monkeypatch.setattr(pf, "run_rag", lambda q, **k: {"answer": answers[q], "sources": []})
 

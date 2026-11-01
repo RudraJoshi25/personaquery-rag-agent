@@ -13,7 +13,7 @@ instead of being averaged into mediocrity.
 WHY LOCALLY
 -----------
 Storage is not the issue people expect. This corpus is a few hundred chunks;
-at ~200 tokens x 128 dims x 4 bytes that is single-digit megabytes. And
+at ~200 tokens x 96 dims x 4 bytes that is single-digit megabytes. And
 running it through FastEmbed's ONNX runtime costs ~40-80ms with no network
 hop, which is FASTER than calling a hosted reranker API (~250-500ms). The
 usual reason to avoid ColBERT — heavyweight torch inference — does not apply
@@ -26,7 +26,12 @@ from typing import Any
 
 from src.core.logging import log_event
 
-COLBERT_MODEL = os.getenv("COLBERT_MODEL", "colbert-ir/colbertv2.0")
+# answerai-colbert-small-v1 (33M params) rather than colbertv2.0 (110M):
+# colbertv2.0 alone added ~400MB RSS and peaked the process at ~713MB, past
+# Render's 512MB tier; the small model peaks at ~395MB and scored higher on
+# the eval gate (18/18 vs 17/18). Changing it requires a re-ingest, since
+# storage/colbert_vecs.npz holds this model's document vectors.
+COLBERT_MODEL = os.getenv("COLBERT_MODEL", "answerdotai/answerai-colbert-small-v1")
 RERANK_ENABLED = os.getenv("RERANK_ENABLED", "true").lower() in {"1", "true", "yes"}
 
 _colbert = None
@@ -41,7 +46,9 @@ def _get_colbert():
     try:
         from fastembed import LateInteractionTextEmbedding
 
-        _colbert = LateInteractionTextEmbedding(model_name=COLBERT_MODEL)
+        from src.core.config import MODEL_CACHE_DIR
+
+        _colbert = LateInteractionTextEmbedding(model_name=COLBERT_MODEL, cache_dir=MODEL_CACHE_DIR)
         print(f"[rerank] colbert ready: {COLBERT_MODEL}", flush=True)
     except Exception as exc:
         _colbert_failed = True

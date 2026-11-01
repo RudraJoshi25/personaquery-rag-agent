@@ -26,14 +26,14 @@ query ─▶ guardrails ─▶ response cache ─▶ FAQ cache ─▶ query expa
 | Layer        | Choice |
 |--------------|--------|
 | Backend      | FastAPI + Uvicorn (`app/backend`) |
-| Frontend     | Next.js (`app/frontend-next`), deployed on Cloudflare Pages (https://rudrajoshi.dev) |
+| Frontends    | Portfolio at https://rudrajoshi.dev (React) calls the backend; `app/frontend-next` is a separate Next.js frontend |
 | Embeddings   | `BAAI/bge-small-en-v1.5` via FastEmbed (ONNX, no torch), 384-dim |
 | Keyword      | BM25 (`rank-bm25`) |
 | Fusion       | Reciprocal Rank Fusion (k=60) |
-| Rerank       | ColBERT v2 late interaction, vectors precomputed at ingest |
+| Rerank       | ColBERT late interaction (`answerai-colbert-small-v1`), vectors precomputed at ingest |
 | LLM          | `qwen/qwen3.8-27b` via Groq free tier (OpenAI-compatible), temperature 0.2 |
 | Vector store | NumPy matrix + JSONL chunks; no external DB |
-| Deployment   | Backend on Render (Docker, `render.yaml`), frontend on Cloudflare Pages |
+| Deployment   | FastAPI backend on Google Cloud Run (Docker, `app/backend/Dockerfile`) |
 
 ---
 
@@ -59,7 +59,7 @@ Key environment variables:
 |-----|---------|---------|
 | `GROQ_API_KEY` | — | Groq API key (required for generation) |
 | `GROQ_CHAT_MODEL` | `qwen/qwen3.8-27b` | answer model |
-| `GROQ_EXPANSION_MODEL` | = `GROQ_CHAT_MODEL` | query-expansion model |
+| `GROQ_EXPANSION_MODEL` | `openai/gpt-oss-20b` | query-expansion model (separate per-model rate limits) |
 | `TOP_K` | 8 | retrieved chunks |
 | `QUERY_EXPANSION_ENABLED` | true | LLM paraphrases for long questions |
 | `RERANK_ENABLED` | true | ColBERT rerank |
@@ -77,19 +77,19 @@ PII, reference-list noise); `data/curated/projects.md` summarises both.
 
 ### Known limitations
 
-- **q10 ("Summarize my professional profile.") fails retrieval, by choice.**
-  It expects the resume's summary line ("seeking a first commercial AI/ML or
-  software engineering role"), but "profile" matches the curated
-  `linkedin-profile.md`, `education.md` and `projects.md` chunks more
-  strongly, so no resume chunk makes the top 8. The question is vague rather
-  than retrieval being broken; the answer is still grounded in the curated
-  docs. Left failing rather than tuning the golden set to pass.
+- **q10 ("Summarize my professional profile.") is borderline and currently
+  fails retrieval.** "profile" matches the curated `linkedin-profile.md`,
+  `education.md` and `projects.md` chunks about as well as the CV summary
+  line, which sits just outside the top 8 (it is 3rd at top-10). It has
+  flipped between pass and fail with ColBERT model and corpus changes. Left
+  failing rather than tuning the golden set to pass. 18 cases is a small set,
+  so treat the score as a regression alarm, not a guarantee.
 
 ---
 
 ## Scope & Limitations
 
-- **Tiny, personal corpus** (~57 chunks). Retrieval metrics would not transfer
+- **Tiny, personal corpus** (~58 chunks). Retrieval metrics would not transfer
   unchanged to a large heterogeneous corpus.
 - **Brute-force vector search** over an in-RAM matrix. Fine at this size.
 - **Single LLM provider.** The FAQ cache and extractive fallback keep the bot

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import pytest
+from starlette.requests import Request
 from starlette.testclient import TestClient
 
+from src import main
 from src.api import rate_limit, routes_chat
 from src.main import app
 
@@ -128,3 +130,41 @@ def test_cors_rejects_foreign_vercel_app(client):
         "Access-Control-Request-Method": "POST",
     })
     assert "access-control-allow-origin" not in r.headers
+
+
+def _req(xff=None, peer="10.9.9.9"):
+    headers = [(b"x-forwarded-for", xff.encode())] if xff else []
+    return Request({"type": "http", "headers": headers, "client": (peer, 1234)})
+
+
+@pytest.fixture
+def behind_proxies(monkeypatch):
+    monkeypatch.setattr(rate_limit, "TRUST_PROXY", True)
+    monkeypatch.setattr(rate_limit, "TRUSTED_PROXY_HOPS", 2)
+
+
+def test_xff_three_entries_returns_client(behind_proxies):
+    assert rate_limit.client_id(_req("198.51.100.4, 172.68.1.1, 10.0.0.2")) == "198.51.100.4"
+
+
+def test_xff_spoofed_left_entry_ignored(behind_proxies):
+    assert rate_limit.client_id(_req("6.6.6.6, 198.51.100.4, 172.68.1.1, 10.0.0.2")) == "198.51.100.4"
+
+
+def test_xff_too_short_falls_back_to_peer(behind_proxies):
+    assert rate_limit.client_id(_req("198.51.100.4, 10.0.0.2")) == "10.9.9.9"
+    assert rate_limit.client_id(_req(None)) == "10.9.9.9"
+
+
+def test_xff_ignored_without_trust_proxy(monkeypatch):
+    monkeypatch.setattr(rate_limit, "TRUST_PROXY", False)
+    assert rate_limit.client_id(_req("198.51.100.4, 172.68.1.1, 10.0.0.2")) == "10.9.9.9"
+
+
+def test_startup_preloads_models(monkeypatch):
+    calls = []
+    monkeypatch.setattr(main, "warm_up", lambda: calls.append(1))
+    monkeypatch.setenv("PRELOAD_MODELS", "true")
+    with TestClient(app):
+        pass
+    assert calls == [1]

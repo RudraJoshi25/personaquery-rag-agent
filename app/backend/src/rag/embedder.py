@@ -25,8 +25,10 @@ class Embedder:
     def __post_init__(self):
         from fastembed import TextEmbedding
 
+        from src.core.config import MODEL_CACHE_DIR
+
         fe_name = _FASTEMBED_ALIASES.get(self.model_name, self.model_name)
-        self._fe = TextEmbedding(model_name=fe_name)
+        self._fe = TextEmbedding(model_name=fe_name, cache_dir=MODEL_CACHE_DIR)
         # Probe once rather than trusting a hardcoded table.
         self.dim = len(next(iter(self._fe.embed(["dimension probe"]))))
 

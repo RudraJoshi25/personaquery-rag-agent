@@ -1,13 +1,13 @@
-{"id":"q01","question":"What is my email address?","must_include":["rudrajoshi.cs@gmail.com"],"must_cite":true,"expected_source":"Rudra_Joshi_Resume.pdf","expected_snippets":["rudrajoshi.cs@gmail.com"]}
-{"id":"q02","question":"What is my phone number?","must_include":["request"],"must_cite":true,"expected_source":"Rudra_Joshi_Resume.pdf","expected_snippets":["Phone: available on request"]}
-{"id":"q03","question":"Where am I based / located?","must_include":["Sydney"],"must_cite":true,"expected_source":"Rudra_Joshi_Resume.pdf","expected_snippets":["Sydney"]}
-{"id":"q04","question":"What is my educational background?","must_include":["Wollongong"],"must_cite":true,"expected_source":"Rudra_Joshi_Resume.pdf","expected_snippets":["Master of Computer Science"]}
-{"id":"q05","question":"What programming languages do I know?","must_include":["Python"],"must_cite":true,"expected_source":"Rudra_Joshi_Resume.pdf","expected_snippets":["Python, SQL, JavaScript, TypeScript"]}
-{"id":"q06","question":"Which AI/ML frameworks have I used?","must_include":["PyTorch"],"must_cite":true,"expected_source":"Rudra_Joshi_Resume.pdf","expected_snippets":["scikit-learn, PyTorch, RAG"]}
-{"id":"q07","question":"What internships have I done?","must_include":["Android"],"must_cite":true,"expected_source":"Rudra_Joshi_Resume.pdf","expected_snippets":["Android Application Development Intern"]}
-{"id":"q08","question":"What awards have I received?","must_include":["Best Paper"],"must_cite":true,"expected_source":"Rudra_Joshi_Resume.pdf","expected_snippets":["Best Paper Award"]}
-{"id":"q09","question":"What projects have I built?","must_include":["HealthEcho"],"must_cite":true,"expected_source":"Rudra_Joshi_Resume.pdf","expected_snippets":["HealthEcho"]}
-{"id":"q10","question":"Summarize my professional profile.","must_include":["AI/ML"],"must_cite":true,"expected_source":"Rudra_Joshi_Resume.pdf","expected_snippets":["seeking a first commercial AI/ML or software engineering role"]}
+{"id":"q01","question":"What is my email address?","must_include":["rudrajoshi.cs@gmail.com"],"must_cite":true,"expected_source":"Rudra_CV.pdf","expected_snippets":["rudrajoshi.cs@gmail.com"]}
+{"id":"q02","question":"What is my phone number?","must_include":["request"],"must_cite":true,"expected_source":"Rudra_CV.pdf","expected_snippets":["Phone: available on request"]}
+{"id":"q03","question":"Where am I based / located?","must_include":["Sydney"],"must_cite":true,"expected_source":"Rudra_CV.pdf","expected_snippets":["Sydney"]}
+{"id":"q04","question":"What is my educational background?","must_include":["Wollongong"],"must_cite":true,"expected_source":"Rudra_CV.pdf","expected_snippets":["Master of Computer Science"]}
+{"id":"q05","question":"What programming languages do I know?","must_include":["Python"],"must_cite":true,"expected_source":"Rudra_CV.pdf","expected_snippets":["Python, SQL, JavaScript, TypeScript"]}
+{"id":"q06","question":"Which AI/ML frameworks have I used?","must_include":["PyTorch"],"must_cite":true,"expected_source":"Rudra_CV.pdf","expected_snippets":["scikit-learn, PyTorch, RAG"]}
+{"id":"q07","question":"What internships have I done?","must_include":["Android"],"must_cite":true,"expected_source":"Rudra_CV.pdf","expected_snippets":["Android Application Development Intern"]}
+{"id":"q08","question":"What awards have I received?","must_include":["Best Paper"],"must_cite":true,"expected_source":"Rudra_CV.pdf","expected_snippets":["Best Paper Award"]}
+{"id":"q09","question":"What projects have I built?","must_include":["HealthEcho"],"must_cite":true,"expected_source":"Rudra_CV.pdf","expected_snippets":["HealthEcho"]}
+{"id":"q10","question":"Summarize my professional profile.","must_include":["AI/ML"],"must_cite":true,"expected_source":"Rudra_CV.pdf","expected_snippets":["seeking a first commercial AI/ML or software engineering role"]}
 {"id":"q11","question":"What is the title of the patent?","must_include":["Face Recognition"],"must_cite":true,"expected_source":"Patent PDF.pdf","expected_snippets":["INTELLIGENT FACE RECOGNITION SYSTEM USING DEEP RECURRENT NEURAL NETWORK"]}
 {"id":"q12","question":"What is the patent application number?","must_include":["202211058943"],"must_cite":true,"expected_source":"Patent PDF.pdf","expected_snippets":["202211058943"]}
 {"id":"q13","question":"What neural network architectures does the patent describe?","must_include":["neural network"],"must_cite":true,"expected_source":"Patent PDF.pdf","expected_snippets":["convolutional neural network","recurrent neural network"]}
@@ -15,4 +15,4 @@
 {"id":"q15","question":"What is the Cognitive-Chair project about?","must_include":["wheelchair"],"must_cite":true,"expected_source":"Copy of Cognitive-Chair (Final Draft).pdf","expected_snippets":["Brain Sensing Wheelchair for Paraplegic/Quadriplegic"]}
 {"id":"q16","question":"What are the main brainwave frequencies mentioned?","must_include":["Beta"],"must_cite":true,"expected_source":"projects.md","expected_snippets":["Gamma/Beta/Alpha/Theta/Delta EEG bands"]}
 {"id":"q19","question":"What is a Brain-Computer Interface according to the paper?","must_include":["brain"],"must_cite":true,"expected_source":"projects.md","expected_snippets":["controlled through EEG and EOG signals"]}
-{"id":"q20","question":"What is my contact email (not a co-author's)?","must_include":["rudrajoshi.cs@gmail.com"],"must_cite":true,"expected_source":"Rudra_Joshi_Resume.pdf","expected_snippets":["rudrajoshi.cs@gmail.com"]}
+{"id":"q20","question":"What is my contact email (not a co-author's)?","must_include":["rudrajoshi.cs@gmail.com"],"must_cite":true,"expected_source":"Rudra_CV.pdf","expected_snippets":["rudrajoshi.cs@gmail.com"]}

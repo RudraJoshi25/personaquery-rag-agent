@@ -19,6 +19,11 @@ LOG_DIR = Path(os.getenv("RAG_LOG_DIR", "logs"))
 
 TOP_K = int(os.getenv("TOP_K", "8"))
 
+# ONNX model cache. FastEmbed's default is the system temp dir, which on
+# Render's native runtime is NOT carried over from the build: every cold
+# start re-downloaded both models. Inside the project it survives the build.
+MODEL_CACHE_DIR = os.getenv("FASTEMBED_CACHE_PATH", str(BACKEND_ROOT / ".models"))
+
 # Retrieval toggles
 RAG_VECTOR_ENABLED = os.getenv("RAG_VECTOR_ENABLED", "true").lower() in {"1", "true", "yes"}
 
@@ -31,3 +36,6 @@ RATE_LIMIT_REQUESTS = int(os.getenv("RATE_LIMIT_REQUESTS", "20"))
 RATE_LIMIT_WINDOW_S = float(os.getenv("RATE_LIMIT_WINDOW_S", "60"))
 # Only true behind a reverse proxy that appends X-Forwarded-For (Render does).
 TRUST_PROXY = os.getenv("TRUST_PROXY", "false").lower() in {"1", "true", "yes"}
+# Proxies that append to X-Forwarded-For after the client. Production is
+# "client, Cloudflare, Render-internal" -> 2.
+TRUSTED_PROXY_HOPS = int(os.getenv("TRUSTED_PROXY_HOPS", "2"))

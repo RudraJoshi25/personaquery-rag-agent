@@ -13,17 +13,35 @@ from src.api.routes_chat import router as chat_router
 from src.core.config import RAG_STORAGE_DIR, RAG_VECTOR_ENABLED
 
 
+def warm_up() -> None:
+    """Load every model and the index once. Raises if the store is missing."""
+    from src.rag.embedder import get_embedder
+    from src.rag.rerank import RERANK_ENABLED, _get_colbert
+    from src.rag.retrieve_custom import _get_store
+
+    get_embedder()
+    _get_store()
+    if RERANK_ENABLED:
+        _get_colbert()
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    # Lightweight diagnostics for Render
-    try:
-        import psutil  # optional
-        mem_mb = psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024
-    except Exception:
-        mem_mb = None
-
     storage_dir = Path(RAG_STORAGE_DIR)
     storage_ok = all((storage_dir / f).exists() for f in ["chunks.jsonl", "vectors.npy", "bm25.json"])
+
+    # Load models now, not on the first request: an out-of-memory then fails
+    # the deploy instead of a visitor's request, and nobody waits on a load.
+    # Tests switch it off (tests/conftest.py).
+    if os.getenv("PRELOAD_MODELS", "true").lower() in {"1", "true", "yes"}:
+        warm_up()
+
+    # Measured AFTER the loads, so the deploy log shows the real footprint.
+    try:
+        import psutil
+        mem_mb = round(psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024, 1)
+    except Exception:
+        mem_mb = None
     print(
         f"[startup] vector_enabled={RAG_VECTOR_ENABLED} storage_ok={storage_ok} mem_mb={mem_mb}",
         flush=True,

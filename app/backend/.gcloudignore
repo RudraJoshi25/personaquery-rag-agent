@@ -1,0 +1,18 @@
+# What `gcloud run deploy --source .` must NOT upload to Cloud Build.
+# Without this file the upload includes .env (the Groq key). Keep in sync
+# with .dockerignore.
+.gcloudignore
+.env
+.env.*
+.venv/
+.models/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.pyc
+logs/
+src/eval/results/
+.git/
+.github/
+tests/
+latency_bench.py

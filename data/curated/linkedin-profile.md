@@ -32,17 +32,14 @@
 
 ## Headline
 
-> AI Engineer | RAG · LLMs · LangChain · FastAPI | IEEE Best Paper Award |
+> AI Engineer | RAG · LLMs · FastAPI | IEEE Best Paper Award |
 > MSc CS | Open to Sydney roles
 
 ## About
 
 I build AI systems that run in production, not just in notebooks.
 
-With an MSc in Computer Science (AI & Big Data) from the University of
-Wollongong and full Australian work rights, I've spent the last two years
-building LLM-powered applications from scratch: RAG pipelines, inference
-APIs, and evaluation harnesses. No team behind me — just obsession, good
+No team behind me — just obsession, good
 engineering habits, and a bias for shipping.
 
 I write clean Python, think in systems, and read papers for fun. I care about
@@ -104,8 +101,7 @@ Grouped for readability; the source list is unordered.
 **AI / ML / LLM:** Artificial Intelligence (AI), Machine Learning, Deep
 Learning, Deep Reinforcement Learning, Natural Language Processing (NLP),
 Computer Vision, Large Language Models (LLM), Generative AI,
-Retrieval-Augmented Generation (RAG), Prompt Engineering, LangChain,
-LlamaIndex, ReAct agent, Multi-agent Systems, Claude API, Hugging Face
+Retrieval-Augmented Generation (RAG), Prompt Engineering, ReAct agent, Multi-agent Systems, Claude API, Hugging Face
 Transformers, Hugging Face Inference API, TensorFlow, Vector Databases,
 Vector Search / Information Retrieval, MLOps, Algorithm Development, Data
 Science, Data Analysis and Visualization
@@ -140,8 +136,8 @@ see awards-and-certifications.md for full detail; not duplicated here.
 ## Publications and Patents
 
 Cognitive-Chair (IEEE, Dec 2022) and the Intelligent Face Recognition System
-patent — see projects.md and awards-and-certifications.md for full detail;
-not duplicated here.
+patent application — separate works; see projects.md (paper) and
+awards-and-certifications.md (patent) for full detail; not duplicated here.
 
 ## Projects
 
