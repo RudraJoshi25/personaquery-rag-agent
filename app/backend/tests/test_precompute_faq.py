@@ -56,3 +56,22 @@ def test_only_keeps_successes_when_a_later_entry_fails(tmp_path, monkeypatch):
 
     entries = json.loads(out.read_text(encoding="utf-8"))["entries"]
     assert [e["question"] for e in entries] == ["good?"]
+
+
+def test_aliases_follow_their_target_after_only(tmp_path, monkeypatch):
+    out = tmp_path / "faq_cache.json"
+    old = {"index_sha": "x", "entries": [
+        {"question": "Target?", "answer": "old [[cite:1]]", "sources": [], "embedding": [0, 1]},
+        {"question": "Alias?", "answer": "old [[cite:1]]", "sources": [], "embedding": [0, 1]},
+    ]}
+    out.write_text(json.dumps(old), encoding="utf-8")
+    monkeypatch.setattr(pf, "OUT_PATH", out)
+    monkeypatch.setattr(pf, "STORAGE_DIR", str(tmp_path))
+    monkeypatch.setattr(pf, "FAQ_ALIASES", {"Alias?": "Target?"})
+    monkeypatch.setattr(pf, "get_embedder", lambda: _FakeEmbedder())
+    monkeypatch.setattr(pf, "run_rag", lambda q, **k: {"answer": "new [[cite:1]]", "sources": []})
+
+    assert pf.main(["--only", "Target?"]) == 0
+
+    by_q = {e["question"]: e["answer"] for e in json.loads(out.read_text(encoding="utf-8"))["entries"]}
+    assert by_q == {"Target?": "new [[cite:1]]", "Alias?": "new [[cite:1]]"}

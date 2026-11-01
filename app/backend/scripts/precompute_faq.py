@@ -13,7 +13,10 @@ trade — move the quota risk from request time to build time.
 
 Questions come from two places:
   - src/eval/qa.jsonl (the golden set — by definition the things worth
-    getting right, and already curated)
+    getting right, and already curated). Its first-person questions ("What
+    is my phone number?") are skipped: they exist to test the identity
+    rules, and a cached second-person answer would be served to visitors,
+    who are third parties. FAQ_EXTRA carries the third-person versions.
   - FAQ_EXTRA below (phrasings a recruiter would actually type, which the
     eval set doesn't cover because it was written for measurement)
 
@@ -25,6 +28,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -47,18 +51,24 @@ QA_PATH = Path(__file__).resolve().parents[1] / "src" / "eval" / "qa.jsonl"
 PACE_S = float(os.getenv("FAQ_PACE_S", "6.0"))
 MAX_ATTEMPTS = 3
 
+# Golden-set questions asked as Rudra ("my", "I"); eval-only, never cached.
+_FIRST_PERSON = re.compile(r"\b(i|my|me|mine)\b", re.IGNORECASE)
+
 # Real-visitor phrasings. The eval set is written for measurement ("What is
 # my email address?" — first person, because it tests the identity rules);
 # actual visitors ask in second/third person.
 FAQ_EXTRA = [
     "How can I contact Rudra?",
     "What is Rudra's email?",
+    "What is Rudra's phone number?",
+    "What is his phone number?",
     "Where is Rudra based?",
     "Is Rudra authorised to work in Australia?",
     "What is Rudra's educational background?",
     "What did Rudra study?",
     "What are Rudra's technical skills?",
     "What programming languages does Rudra know?",
+    "Which AI/ML frameworks has Rudra used?",
     "Does Rudra have experience with RAG or LLMs?",
     "What projects has Rudra built?",
     "Tell me about PersonaQuery.",
@@ -140,9 +150,77 @@ _EDUCATION = {
     ],
 }
 
+# Shared by both phone phrasings. The cache used to serve the golden set's
+# first-person "What is my phone number?" answer ("Your resume...") here.
+_PHONE = {
+    "answer": (
+        "Rudra's CV lists his phone number as \"available on request\" "
+        "[[cite:1]]. The way to contact him is by email, at "
+        "rudrajoshi.cs@gmail.com [[cite:1]]."
+    ),
+    "sources": [
+        ("Rudra_CV.pdf", "RUDRA JOSHI", "available on request"),
+    ],
+}
+
+# Shared by both contact phrasings. Generated version opened with "You can
+# reach Rudra..."; "his contact details" also hit the phone entry at 0.88.
+_CONTACT = {
+    "answer": (
+        "Rudra's CV lists these contact details [[cite:1]]:\n\n"
+        "- **Email:** rudrajoshi.cs@gmail.com\n"
+        "- **LinkedIn:** linkedin.com/in/rudrajoshi-ai\n"
+        "- **GitHub:** github.com/RudraJoshi25\n"
+        "- **Phone:** available on request\n\n"
+        "Email is the way to contact him directly. He is based in Sydney, "
+        "NSW, and open to relocation [[cite:1]]."
+    ),
+    "sources": [
+        ("Rudra_CV.pdf", "RUDRA JOSHI", "available on request"),
+    ],
+}
+
 FAQ_OVERRIDES = {
     "What is Rudra's educational background?": _EDUCATION,
     "What did Rudra study?": _EDUCATION,
+    "What is Rudra's phone number?": _PHONE,
+    "What is his phone number?": _PHONE,
+    "How can I contact Rudra?": _CONTACT,
+    "What are his contact details?": _CONTACT,
+    # Generated version said PersonaQuery was deployed "with a Next.js
+    # frontend", skipped the Master's and padded with a quiz entry.
+    "Summarise Rudra's professional profile.": {
+        "answer": (
+            "Rudra Joshi holds a Master of Computer Science from the University "
+            "of Wollongong, majoring in Machine Learning and Big Data [[cite:1]]. "
+            "Before that he completed a B.Tech in Computer Science & Engineering "
+            "(Data Science Specialisation) at GSFC University, 2019–2023 "
+            "[[cite:2]]. He has full Australian work rights and is seeking his "
+            "first commercial AI/ML or software engineering role [[cite:3]]. He "
+            "is based in Sydney, NSW, and open to relocation [[cite:4]].\n\n"
+            "- **Projects:** he built and deployed PersonaQuery, a RAG assistant "
+            "that answers questions from his own documents with inline "
+            "citations, with a FastAPI backend on Google Cloud Run [[cite:5]]. "
+            "JobPilot is a 6-stage job-application pipeline covering "
+            "multi-source scraping, LLM match scoring, tailored resume and "
+            "cover-letter generation, and Playwright form filling [[cite:6]].\n"
+            "- **Experience:** Android Application Development Intern at TSPL, "
+            "and Engineering Intern (Full Stack + Multi-Domain) at Gurukula, "
+            "Tntra Engineering, both in Vadodara, India [[cite:7]].\n"
+            "- **Research:** co-author of the Cognitive-Chair paper, which won "
+            "the Best Paper Award at IEEE AIST 2022 [[cite:8]]."
+        ),
+        "sources": [
+            ("education.md", "Master of Computer Science"),
+            ("Rudra_CV.pdf", "EDUCATION"),
+            ("Rudra_CV.pdf", "SUMMARY"),
+            ("Rudra_CV.pdf", "RUDRA JOSHI", "open to relocation"),
+            ("projects.md", "PersonaQuery", "Repository layout"),
+            ("Rudra_CV.pdf", "KEYPROJECTS", "6-stage"),
+            ("Rudra_CV.pdf", "EXPERIENCE"),
+            ("awards-and-certifications.md", "IEEE Best Paper"),
+        ],
+    },
     # Generated version compared him to "a typical first-year graduate",
     # which no document supports. Facts only, no comparison.
     "How deep is his ML experience, really?": {
@@ -434,6 +512,37 @@ FAQ_OVERRIDES = {
 }
 
 
+# Extra wordings for an existing entry: same answer and sources, new
+# embedding, no model call. Short visitor phrasings ("what are his skills")
+# otherwise miss the threshold or land on the wrong entry. Only add one
+# whose nearest OTHER-topic entry stays well below FAQ_MIN_SIMILARITY;
+# tests/test_faq_visitor.py checks the paraphrases.
+FAQ_ALIASES = {
+    "Where does Rudra live?": "Where is Rudra based?",
+    "Which city is he in?": "Where is Rudra based?",
+    "What are his skills?": "What are Rudra's technical skills?",
+    "What tech does he know?": "What are Rudra's technical skills?",
+    "What did he study?": "What is Rudra's educational background?",
+    "What degree does he have?": "What is Rudra's educational background?",
+    "What projects has he worked on?": "What projects has Rudra built?",
+}
+
+
+def _with_aliases(entries: list[dict], embedder) -> list[dict]:
+    """Rebuild every alias from its target's CURRENT entry, so a target
+    regenerated by --only never leaves a stale copy behind."""
+    by_q = {e["question"]: e for e in entries if e["question"] not in FAQ_ALIASES}
+    out = list(by_q.values())
+    for alias, target in FAQ_ALIASES.items():
+        src = by_q.get(target)
+        if src is None:
+            print(f"  alias skipped (no {target!r} entry): {alias}")
+            continue
+        out.append({"question": alias, "answer": src["answer"], "sources": src["sources"],
+                    "embedding": _embed(embedder, alias)})
+    return out
+
+
 def _load_eval_questions() -> list[str]:
     if not QA_PATH.exists():
         return []
@@ -444,9 +553,11 @@ def _load_eval_questions() -> list[str]:
             if not s or s.startswith("#"):
                 continue
             try:
-                out.append(json.loads(s)["question"])
+                q = json.loads(s)["question"]
             except Exception:
                 continue
+            if not _FIRST_PERSON.search(q):
+                out.append(q)
     return out
 
 
@@ -538,6 +649,7 @@ def _only(questions: list[str]) -> int:
             break  # still write what succeeded: each entry cost real quota
         keep = [e for e in entries if e["question"].strip().lower() != q.lower()]
         entries, merged = keep + [entry], merged + 1
+    entries = _with_aliases(entries, embedder)
     _write(entries)
     print(f"\nMerged {merged}/{len(questions)} -> {OUT_PATH} ({len(entries)} total)")
     return 0 if merged == len(questions) else 1
@@ -574,6 +686,7 @@ def main(argv: list[str] | None = None) -> int:
         else:
             entries.append(entry)
 
+    entries = _with_aliases(entries, embedder)
     _write(entries)
 
     print(f"\nWrote {len(entries)} entries -> {OUT_PATH}")
